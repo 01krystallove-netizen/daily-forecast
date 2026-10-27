@@ -120,7 +120,11 @@ textarea{resize:vertical;min-height:60px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:14px}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.word{font-family:Fraunces,Georgia,serif;font-size:20px;line-height:1.4;min-height:84px;padding:16px;border-radius:10px;background:var(--surface-2)}
+.needword{border-top:1px solid var(--line);margin-top:6px;padding-top:18px}
+.savebar{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}
+.word+.word{margin-top:8px}
+.word .wlabel{display:block;font-family:Inter,system-ui,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px}
+.word{font-family:Fraunces,Georgia,serif;font-size:20px;line-height:1.4;padding:14px 16px;border-radius:10px;background:var(--surface-2)}
 
 .patterns{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .pattern{display:flex;gap:12px;align-items:flex-start;font-size:14px}
@@ -195,7 +199,7 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
       <form id="form" autocomplete="off">
         <div class="row inline">
           <div><label for="f-date">Date</label><input type="date" id="f-date" required></div>
-          <div><label for="f-sleep">Hours slept</label><input type="number" id="f-sleep" min="0" max="14" step="0.25" value="7"></div>
+          <div><label for="f-sleep">Hours slept</label><input type="number" id="f-sleep" inputmode="decimal" min="0" max="14" step="0.25" placeholder="e.g. 7.25"></div>
         </div>
         <div class="row">
           <label for="f-weight">Weight <span class="muted small">optional · <span class="unitLabel">lb</span></span></label>
@@ -211,17 +215,20 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
           </select>
         </div>
         <div class="row">
-          <label>Anything else today? <span class="muted small">tap all that apply</span></label>
-          <div class="chips" id="symptomChips" style="margin:4px 0 0"></div>
-        </div>
-        <div class="row">
           <label style="justify-content:flex-start;gap:8px;font-weight:400"><input type="checkbox" id="f-period"> My period started this day</label>
         </div>
         <div class="row">
           <label for="f-note">Note <span class="muted small">optional</span></label>
           <textarea id="f-note" placeholder="Anything worth remembering about today"></textarea>
         </div>
-        <div class="actions">
+        <div class="needword">
+          <h2>Need a word?</h2>
+          <p class="muted small">Tap everything that fits today. It's saved with your check-in.</p>
+          <div class="chips" id="chips"></div>
+          <div id="word"></div>
+          <div class="actions" style="margin-top:10px"><button class="btn ghost" type="button" id="anotherWord">Another one</button></div>
+        </div>
+        <div class="actions savebar">
           <button class="btn primary" type="submit" id="saveBtn">Save check-in</button>
           <button class="btn ghost" type="button" id="deleteBtn" hidden>Delete this day</button>
           <span class="toast" id="toast"></span>
@@ -230,13 +237,7 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
     </section>
 
     <section class="card">
-      <h2>Need a word?</h2>
-      <p class="muted small">Pick whatever's closest to how you feel right now.</p>
-      <div class="chips" id="chips"></div>
-      <div class="word" id="word"></div>
-      <div class="actions" style="margin-top:10px"><button class="btn ghost" id="anotherWord">Another one</button></div>
-
-      <h2 style="margin-top:26px">What moves your days</h2>
+      <h2>What moves your days</h2>
       <div class="patterns" id="patterns"></div>
     </section>
   </div>
@@ -266,7 +267,7 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
   <details class="card" style="margin-bottom:14px">
     <summary>How the forecast works</summary>
     <div class="inner how small">
-      <p><strong>Your day score (0–100)</strong> comes from each check-in: energy counts most, then mood, stress, sleep quality, and soreness.</p>
+      <p><strong>Your day score (0–100)</strong> comes from each check-in: energy counts most, then mood, motivation, stress, and sleep quality (each 1–10). Any you skip are left out rather than guessed.</p>
       <p><strong>"Your usual"</strong> is your average over the last 28 logged days. Day types are relative to that, so a "gentle" day means lower than <em>your</em> normal, not a grade.</p>
       <p><strong>The forecast</strong> starts from your usual and adjusts for: recent sleep against your target (fading over a few days), recent momentum, training fatigue from the last four days (including sessions you plan ahead), weekday patterns in your own history, your cycle phase (projected from the period start dates you mark), and days you flag as big or stressful. As you log more, it learns how strongly sleep and training affect <em>you</em> specifically.</p>
       <p><strong>Accuracy</strong> is checked by replaying your history: each logged day is forecast using only the days before it, then compared to what you actually logged.</p>
@@ -291,7 +292,7 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
         <button class="btn" id="sampleBtn2">Load sample data</button>
         <button class="btn ghost" id="clearAll">Clear everything</button>
       </div>
-      <p class="muted small">CSV columns (any order): <code>date</code> (YYYY-MM-DD), <code>sleep_hours</code>, <code>sleep_quality</code>, <code>energy</code>, <code>mood</code>, <code>soreness</code>, <code>stress</code> (1–5 each), <code>training</code> (rest / cardio / lifting), <code>weight</code>, <code>symptoms</code> (e.g. "Bloated; Cramps"), <code>period</code> (yes on the day a period started), <code>note</code>. Everything stays in this browser; nothing is sent anywhere.</p>
+      <p class="muted small">CSV columns (any order): <code>date</code> (YYYY-MM-DD), <code>sleep_hours</code>, <code>sleep_quality</code>, <code>energy</code>, <code>mood</code>, <code>motivation</code>, <code>stress</code> (1–10 each), <code>training</code> (rest / cardio / lifting), <code>weight</code>, <code>tags</code> (e.g. "Bloated; Cramps"), <code>period</code> (yes on the day a period started), <code>note</code>. Everything stays in this browser; nothing is sent anywhere.</p>
     </div>
   </details>
 
@@ -326,14 +327,24 @@ function slope(xs, ys){
 const KEY = 'dailyForecast.v1';
 const LOAD = { rest:0, cardio:2, lifting:3, none:0, light:1, moderate:2, hard:3 };
 const normTraining = t => ({ none:'rest', light:'cardio', moderate:'cardio', hard:'lifting' })[t] || t || 'rest';
-const SYMPTOMS = ['Bloated','Brain fog','Increased appetite','Cramps','Tired'];
+const TAGS = ['Fatigue','Brain fog','Increased appetite','Depressed','Self-critical','Mood swings','Cramps','Bloated','Happy','Calm','Proud of myself','Unmotivated'];
+const TAG_RENAME = { 'Tired':'Fatigue', 'Drained':'Fatigue', 'Feeling behind':'Self-critical' };
+const to10 = v => v == null ? null : clamp(Math.round(1 + (v-1)*9/4), 1, 10);
+function migrateEntry(e, from5){
+  e.training = normTraining(e.training);
+  e.tags = [...new Set([...(e.tags||[]), ...(e.symptoms||[])].map(t => TAG_RENAME[t] || t).filter(t => TAGS.includes(t)))];
+  delete e.symptoms; delete e.soreness;
+  if (from5) ['energy','mood','sleepQuality','stress'].forEach(k => { if (e[k] != null) e[k] = to10(e[k]); });
+  return e;
+}
 let storageOk = true;
-let state = { entries:{}, plans:{}, periods:[], settings:{ sleepTarget:7.5, unit:'lb' }, sample:false };
+let state = { scale:10, entries:{}, plans:{}, periods:[], settings:{ sleepTarget:7.5, unit:'lb' }, sample:false };
 function loadState(){
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) { const s = JSON.parse(raw); state = { ...state, ...s, periods: s.periods || [], settings:{ ...state.settings, ...(s.settings||{}) } }; }
-    Object.values(state.entries).forEach(e => { e.training = normTraining(e.training); if (!e.symptoms) e.symptoms = []; });
+    let from5 = false;
+    if (raw) { const s = JSON.parse(raw); from5 = s.scale !== 10; state = { ...state, ...s, periods: s.periods || [], settings:{ ...state.settings, ...(s.settings||{}) } }; }
+    Object.values(state.entries).forEach(e => migrateEntry(e, from5)); state.scale = 10;
     Object.values(state.plans).forEach(p => { if (p.load) p.load = normTraining(p.load); });
   } catch(e){ storageOk = false; }
 }
@@ -341,9 +352,14 @@ function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch
 
 /* ---------- scoring ---------- */
 function readiness(e){
-  const n = x => (clamp(x,1,5)-1)/4;
-  return Math.round(100*(0.35*n(e.energy) + 0.25*n(e.mood) + 0.15*n(e.sleepQuality) + 0.10*(1-n(e.soreness)) + 0.15*(1-n(e.stress))));
+  if (!e || (e.energy == null && e.mood == null)) return null;
+  const n = x => (clamp(x,1,10)-1)/9;
+  const parts = [[e.energy,0.35,false],[e.mood,0.25,false],[e.motivation,0.15,false],[e.stress,0.15,true],[e.sleepQuality,0.10,false]].filter(p => p[0] != null);
+  const wsum = parts.reduce((a,p) => a+p[1], 0);
+  return Math.round(100*parts.reduce((a,[v,w,inv]) => a + w*(inv ? 1-n(v) : n(v)), 0)/wsum);
 }
+const rated = d => readiness(state.entries[d]) != null;
+const hasSleep = d => state.entries[d] && state.entries[d].sleepHours != null;
 function zoneOf(score, base){
   const diff = score - base;
   if (score < 38 || diff <= -6) return 'gentle';
@@ -377,7 +393,7 @@ const PHASE_NAMES = { menstrual:'Period', follicular:'Follicular', ovulatory:'Ar
 
 /* ---------- model ---------- */
 function buildModel(cutoff){
-  const all = Object.keys(state.entries).filter(d => d <= cutoff).sort();
+  const all = Object.keys(state.entries).filter(d => d <= cutoff && rated(d)).sort();
   if (all.length < 3) return null;
   const R = d => readiness(state.entries[d]);
   const recent = all.slice(-28);
@@ -393,7 +409,8 @@ function buildModel(cutoff){
   const n = recent.length;
   const fats = recent.map(fatigue);
   const meanFat = mean(fats);
-  const sl = slope(recent.map(d => state.entries[d].sleepHours), recent.map(R));
+  const slp = recent.filter(hasSleep);
+  const sl = slp.length >= 7 ? slope(slp.map(d => state.entries[d].sleepHours), slp.map(R)) : NaN;
   const sleepSens = clamp(((isFinite(sl) ? sl : 4)*n + 4*10)/(n+10), 1, 10);
   const fl = slope(fats, recent.map(R));
   const loadSens = clamp(((isFinite(fl) ? -fl : 3)*n + 3*10)/(n+10), 0.5, 8);
@@ -416,7 +433,8 @@ function buildModel(cutoff){
 
   const last3 = all.slice(-3);
   const momentum = mean(last3.map(R)) - base;
-  const avgSleep = mean(last3.map(d => state.entries[d].sleepHours));
+  const sleepRecent = Object.keys(state.entries).filter(d => d <= cutoff && hasSleep(d) && diffDays(d, cutoff) < 3);
+  const avgSleep = sleepRecent.length ? mean(sleepRecent.map(d => state.entries[d].sleepHours)) : target;
   const debt = avgSleep - target;
 
   return {
@@ -500,35 +518,11 @@ const ZONE_WORDS = {
   ]
 };
 const FEELINGS = {
-  'Drained': [
-    'Low battery is information, not a character flaw.',
-    'Do the smallest useful thing, then let that be enough.',
-    'Water, food, daylight, a short walk. Start with the basics and check back in an hour.',
-    'Tired bodies need less, not more. Give yours less today.'
-  ],
-  'Guilty for resting': [
-    'Rest is a training input, same as sets and reps.',
-    'You\'d tell a friend to take the day. Give yourself the same deal.',
-    'Recovering well today is how you get a better day later this week.',
-    'Nobody gets stronger during the workout. It happens while you rest.'
-  ],
-  'Feeling behind': [
-    'Behind compared to what? Plans bend; they don\'t break.',
-    'You can\'t make up a missed day by punishing the next one. Just take the next normal step.',
-    'A year of progress is mostly average weeks with a few gaps. That\'s what it\'s supposed to look like.',
-    'Starting again is a skill, and you\'re practicing it right now.'
-  ],
-  'Unmotivated': [
-    'Motivation usually shows up after you start, not before. Try five minutes.',
-    'Lower the bar until it\'s easy to step over.',
-    'You don\'t have to want to. You just have to begin, and you\'re allowed to stop.',
-    'Smallest version of the task, right now. Then decide.'
-  ],
-  'Bloated': [
-    'Bloating changes how your body feels, not what it is. It passes.',
-    'The mirror and the scale are unreliable on bloated days. Judge your progress on a different one.',
-    'Comfortable clothes, water, a gentle walk. Be kind to your middle today.',
-    'This is temporary. Your progress isn\'t going anywhere.'
+  'Fatigue': [
+    'Tired is a signal, not a character trait.',
+    'Low battery is information, not a flaw. Do the smallest useful thing, then let that be enough.',
+    'An early night is one of the best training decisions you can make.',
+    'Rest now so you have something to give later.'
   ],
   'Brain fog': [
     'Foggy days are for easy wins. Save big decisions for a clearer day.',
@@ -540,7 +534,25 @@ const FEELINGS = {
     'Hunger is information, not a failure of willpower.',
     'Your body may be asking for more fuel right now. Feeding it well is part of the plan.',
     'Eat a real meal with some protein and move on without guilt.',
-    'Muscle is built with fuel. Eating enough is doing the work.'
+    'One hungry day doesn\'t undo anything. Neither does one big meal.'
+  ],
+  'Depressed': [
+    'Heavy days are real. You don\'t have to fix this one, just get through it gently.',
+    'Depression lies about how permanent things are. This feeling will move.',
+    'Reach out to one person today, even with a two-word text.',
+    'If low days start stacking up, that\'s worth bringing to a doctor or therapist. You deserve support, not just endurance.'
+  ],
+  'Self-critical': [
+    'Would you say this to a friend? Then don\'t say it to yourself.',
+    'You\'re judging a whole person on one day of data.',
+    'Being hard on yourself isn\'t what got you here. Showing up is.',
+    'Criticism is louder than it is accurate. Look at what you actually did.'
+  ],
+  'Mood swings': [
+    'Big feelings passing through don\'t mean something is wrong with you.',
+    'Hormones are real. Some of today\'s weather isn\'t about your life at all.',
+    'Name it, give it room, and don\'t make big decisions from inside it.',
+    'This wave will crest and settle.'
   ],
   'Cramps': [
     'Pain is a real reason to adjust. Adjusting isn\'t quitting.',
@@ -548,17 +560,35 @@ const FEELINGS = {
     'You don\'t owe anyone a workout through pain.',
     'Take care of yourself the way you\'d take care of someone you love.'
   ],
-  'Tired': [
-    'Tired is a signal, not a character trait.',
-    'An early night is one of the best training decisions you can make.',
-    'Do the minimum that keeps you on track, then rest.',
-    'Rest now so you have something to give later.'
+  'Bloated': [
+    'Bloating changes how your body feels, not what it is. It passes.',
+    'The mirror and the scale are unreliable on bloated days. Judge your progress on a different one.',
+    'Comfortable clothes, water, a gentle walk. Be kind to your middle today.',
+    'This is temporary. Your progress isn\'t going anywhere.'
+  ],
+  'Happy': [
+    'Soak it in. You don\'t have to earn it or explain it.',
+    'Notice what made today good. That\'s useful data too.',
+    'Good days count. Let this one fill the tank.',
+    'Remember this one for the next heavy day.'
+  ],
+  'Calm': [
+    'This is what steady feels like. Remember it.',
+    'Calm is a good place to plan from.',
+    'Nothing to fix today. Enjoy that.',
+    'Quiet days build quiet strength.'
   ],
   'Proud of myself': [
     'Good. Notice it. Let it count.',
     'Write down what went right today so you can find it again.',
     'This feeling is data too. Remember what led to it.',
     'You did that. Keep the receipt.'
+  ],
+  'Unmotivated': [
+    'Motivation usually shows up after you start, not before. Try five minutes.',
+    'Lower the bar until it\'s easy to step over.',
+    'You don\'t have to want to. You just have to begin, and you\'re allowed to stop.',
+    'Rest is a training input too. If today is a rest day, that\'s still the plan.'
   ]
 };
 
@@ -566,34 +596,27 @@ const FEELINGS = {
 const SLIDERS = [
   { id:'energy', label:'Energy', lo:'Drained', hi:'Charged' },
   { id:'mood', label:'Mood', lo:'Low', hi:'Great' },
+  { id:'motivation', label:'Motivation', lo:'None', hi:'Fired up' },
   { id:'sleepQuality', label:'Sleep quality', lo:'Restless', hi:'Deep' },
-  { id:'soreness', label:'Soreness', lo:'None', hi:'Very sore' },
   { id:'stress', label:'Stress', lo:'Calm', hi:'Maxed out' }
 ];
 function buildSliders(){
   $('#sliders').innerHTML = SLIDERS.map(s => `
     <div class="row">
-      <label for="f-${s.id}">${s.label} <output id="o-${s.id}">3</output></label>
-      <input type="range" id="f-${s.id}" min="1" max="5" step="1" value="3">
+      <label for="f-${s.id}">${s.label} <output id="o-${s.id}">5</output></label>
+      <input type="range" id="f-${s.id}" min="1" max="10" step="1" value="5">
       <div class="ends"><span>${s.lo}</span><span>${s.hi}</span></div>
     </div>`).join('');
   SLIDERS.forEach(s => $('#f-'+s.id).addEventListener('input', e => $('#o-'+s.id).textContent = e.target.value));
 }
-let formSymptoms = [];
-function renderSymptomChips(){
-  $('#symptomChips').innerHTML = SYMPTOMS.map(x => `<button type="button" class="chip ${formSymptoms.includes(x)?'on':''}" data-s="${esc(x)}" aria-pressed="${formSymptoms.includes(x)}">${esc(x)}</button>`).join('');
-  document.querySelectorAll('#symptomChips .chip').forEach(c => c.addEventListener('click', () => {
-    const v = c.dataset.s; formSymptoms = formSymptoms.includes(v) ? formSymptoms.filter(x => x !== v) : [...formSymptoms, v]; renderSymptomChips();
-  }));
-}
 function fillForm(date){
   const e = state.entries[date];
   $('#f-date').value = date;
-  $('#f-sleep').value = e ? e.sleepHours : 7;
+  $('#f-sleep').value = e && e.sleepHours != null ? e.sleepHours : '';
   $('#f-weight').value = e && e.weight ? e.weight : '';
-  SLIDERS.forEach(s => { const v = e ? e[s.id] : 3; $('#f-'+s.id).value = v; $('#o-'+s.id).textContent = v; });
+  SLIDERS.forEach(s => { const v = e && e[s.id] != null ? e[s.id] : 5; $('#f-'+s.id).value = v; $('#o-'+s.id).textContent = v; });
   $('#f-training').value = e ? normTraining(e.training) : 'rest';
-  formSymptoms = e && e.symptoms ? [...e.symptoms] : []; renderSymptomChips();
+  selectedTags = e && e.tags ? [...e.tags] : []; wordIdx = 0; renderChips(); renderWord();
   $('#f-note').value = e ? (e.note||'') : '';
   $('#f-period').checked = state.periods.includes(date);
   $('#saveBtn').textContent = e ? 'Update check-in' : 'Save check-in';
@@ -607,7 +630,7 @@ function outlookDays(model){
   const t = todayStr(); const out = [];
   for (let i=0; i<7; i++){
     const d = addDays(t, i); const e = state.entries[d];
-    if (e){ const s = readiness(e); out.push({ date:d, logged:true, score:s, zone:zoneOf(s, model.base), parts:[] }); }
+    if (e && readiness(e) != null){ const s = readiness(e); out.push({ date:d, logged:true, score:s, zone:zoneOf(s, model.base), parts:[] }); }
     else out.push({ date:d, logged:false, ...model.forecast(d) });
   }
   return out;
@@ -656,7 +679,7 @@ function renderForecast(){
         </div>
         <p class="muted small" style="margin-top:6px">Your usual is ${Math.round(model.base)}.${x.logged ? '' : ` Likely range ${clamp(x.score-x.band,0,100)}–${clamp(x.score+x.band,0,100)}.`}</p>
       </div>
-      ${x.logged && (state.entries[x.date].symptoms||[]).length ? `<div class="chips" style="margin:0">${state.entries[x.date].symptoms.map(y => `<span class="chip" style="cursor:default">${esc(y)}</span>`).join('')}</div>` : ''}
+      ${x.logged && (state.entries[x.date].tags||[]).length ? `<div class="chips" style="margin:0">${state.entries[x.date].tags.map(y => `<span class="chip" style="cursor:default">${esc(y)}</span>`).join('')}</div>` : ''}
       ${x.logged && state.entries[x.date].weight ? `<p class="small muted">Weigh-in: ${state.entries[x.date].weight} ${state.settings.unit}</p>` : ''}
       ${x.logged ? `<p class="small">${state.entries[x.date].note ? '“' + esc(state.entries[x.date].note) + '”' : 'You logged this day. Edit it in the check-in below.'}</p>` : `
       <div>
@@ -710,7 +733,7 @@ function renderChart(model, days){
   svg += `<rect x="${X(t)-6}" y="${T}" width="${W-Rr-X(t)+6}" height="${H-T-B}" fill="var(--surface-2)" opacity=".6"/>`;
   for (let i=0; i<=total; i+=(W < 600 ? 14 : 7)){ const d = addDays(start, i); svg += `<text x="${X(d)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtShort(d)}</text>`; }
   svg += `<line x1="${L}" x2="${W-Rr}" y1="${Y(model.base)}" y2="${Y(model.base)}" stroke="var(--muted)" stroke-dasharray="4 4" stroke-width="1.5"/>`;
-  const logged = Object.keys(state.entries).filter(d => d >= start && d <= end).sort();
+  const logged = Object.keys(state.entries).filter(d => d >= start && d <= end && rated(d)).sort();
   if (logged.length){
     svg += `<polyline fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round" points="${logged.map(d => `${X(d)},${Y(readiness(state.entries[d]))}`).join(' ')}"/>`;
     logged.forEach(d => { const s = readiness(state.entries[d]); svg += `<circle cx="${X(d)}" cy="${Y(s)}" r="3" fill="var(--ink)"><title>${fmtShort(d)}: ${s}</title></circle>`; });
@@ -724,7 +747,7 @@ function renderChart(model, days){
 }
 
 function backtest(){
-  const dates = Object.keys(state.entries).sort(); const res = [];
+  const dates = Object.keys(state.entries).filter(rated).sort(); const res = [];
   for (let i=7; i<dates.length; i++){
     const m = buildModel(dates[i-1]); if (!m) continue;
     const f = m.forecast(dates[i]); const a = readiness(state.entries[dates[i]]);
@@ -791,13 +814,13 @@ function renderWeight(){
 
 /* ---------- patterns ---------- */
 function renderPatterns(){
-  const dates = Object.keys(state.entries).sort();
+  const dates = Object.keys(state.entries).filter(rated).sort();
   if (dates.length < 10){ $('#patterns').innerHTML = `<p class="muted small">Patterns show up after about 10 check-ins. ${dates.length ? `You have ${dates.length}.` : ''}</p>`; return; }
   const R = d => readiness(state.entries[d]);
   const target = state.settings.sleepTarget;
   const out = [];
-  const good = dates.filter(d => state.entries[d].sleepHours >= target).map(R);
-  const short = dates.filter(d => state.entries[d].sleepHours < target - 1).map(R);
+  const good = dates.filter(d => hasSleep(d) && state.entries[d].sleepHours >= target).map(R);
+  const short = dates.filter(d => hasSleep(d) && state.entries[d].sleepHours < target - 1).map(R);
   if (good.length >= 3 && short.length >= 3){
     const diff = Math.round(mean(good) - mean(short));
     out.push([`${diff>0?'+':''}${diff}`, `Days after you hit your ${target} h sleep target score ${Math.abs(diff)} points ${diff>=0?'higher':'lower'} than days after short sleep (under ${target-1} h).`]);
@@ -817,9 +840,9 @@ function renderPatterns(){
     if (hi.v - lo.v >= 5) out.push([`${Math.round(hi.v - lo.v)}`, `Point gap between your best weekday (${DAYS[hi.i]}s) and your toughest (${DAYS[lo.i]}s). Worth planning around.`]);
   }
   let worst = null;
-  SYMPTOMS.forEach(sym => {
-    const yes = dates.filter(d => (state.entries[d].symptoms||[]).includes(sym)).map(R);
-    const no = dates.filter(d => !(state.entries[d].symptoms||[]).includes(sym)).map(R);
+  TAGS.filter(t => !['Happy','Calm','Proud of myself'].includes(t)).forEach(sym => {
+    const yes = dates.filter(d => (state.entries[d].tags||[]).includes(sym)).map(R);
+    const no = dates.filter(d => !(state.entries[d].tags||[]).includes(sym)).map(R);
     if (yes.length >= 3 && no.length >= 3){ const g = mean(no) - mean(yes); if (g >= 5 && (!worst || g > worst.g)) worst = { sym, g, n: yes.length }; }
   });
   if (worst) out.push([`${Math.round(worst.g)}`, `Points lower on days you log ${worst.sym.toLowerCase()} (${worst.n} days so far). Those are good days to lean on your gentle-day plan.`]);
@@ -832,21 +855,29 @@ function renderPatterns(){
 }
 
 /* ---------- encouragement ---------- */
-let feeling = null, wordIdx = 0;
+let selectedTags = [], wordIdx = 0;
 function renderChips(){
-  $('#chips').innerHTML = Object.keys(FEELINGS).map(f => `<button class="chip ${f===feeling?'on':''}" data-f="${esc(f)}">${esc(f)}</button>`).join('');
-  document.querySelectorAll('#chips .chip').forEach(c => c.addEventListener('click', () => { feeling = c.dataset.f; wordIdx = Math.floor(Math.random()*FEELINGS[feeling].length); renderChips(); renderWord(); }));
+  $('#chips').innerHTML = TAGS.map(f => `<button type="button" class="chip ${selectedTags.includes(f)?'on':''}" data-f="${esc(f)}" aria-pressed="${selectedTags.includes(f)}">${esc(f)}</button>`).join('');
+  document.querySelectorAll('#chips .chip').forEach(c => c.addEventListener('click', () => {
+    const v = c.dataset.f;
+    selectedTags = selectedTags.includes(v) ? selectedTags.filter(x => x !== v) : [...selectedTags, v];
+    wordIdx = Math.floor(Math.random()*4); renderChips(); renderWord();
+  }));
 }
-function currentPool(){
-  if (feeling) return FEELINGS[feeling];
-  const t = todayStr(); const latest = Object.keys(state.entries).filter(d => d <= t).sort().pop();
+function zonePool(){
+  const t = todayStr(); const latest = Object.keys(state.entries).filter(d => d <= t && rated(d)).sort().pop();
   const m = latest ? buildModel(latest) : null;
   if (!m) return ZONE_WORDS.steady;
   const e = state.entries[t];
-  const zone = e ? zoneOf(readiness(e), m.base) : m.forecast(t).zone;
+  const zone = e && readiness(e) != null ? zoneOf(readiness(e), m.base) : m.forecast(t).zone;
   return ZONE_WORDS[zone];
 }
-function renderWord(){ const pool = currentPool(); $('#word').textContent = pool[wordIdx % pool.length]; }
+function renderWord(){
+  if (!selectedTags.length){ const pool = zonePool(); $('#word').innerHTML = `<div class="word">${esc(pool[wordIdx % pool.length])}</div>`; return; }
+  let html = selectedTags.map((t,i) => { const pool = FEELINGS[t]; return `<div class="word"><span class="wlabel">${esc(t)}</span>${esc(pool[(wordIdx+i) % pool.length])}</div>`; }).join('');
+  if (selectedTags.includes('Depressed')) html += `<p class="muted small" style="margin-top:10px">If it ever feels like too much, you can call or text 988 any time, day or night.</p>`;
+  $('#word').innerHTML = html;
+}
 
 /* ---------- sample data ---------- */
 function makeSample(){
@@ -868,14 +899,16 @@ function makeSample(){
     const cyc = cd >= 24 ? -0.7 : cd <= 3 ? -0.5 : (cd >= 8 && cd <= 15 ? 0.35 : 0);
     const energy = clamp(Math.round(3 + cyc + (sleep-7.2)*0.9 - prevLoad*0.35 - (stress-3)*0.3 + noise(0.6)), 1, 5);
     const mood = clamp(Math.round(energy*0.6 + 1.3 + cyc*0.5 - (stress-3)*0.3 + noise(0.5)), 1, 5);
-    const symptoms = [];
-    if (cd <= 3 && rnd() < 0.7) symptoms.push('Cramps');
-    if ((cd >= 24 || cd <= 2) && rnd() < 0.6) symptoms.push('Bloated');
-    if (cd >= 23 && rnd() < 0.5) symptoms.push('Increased appetite');
-    if (energy <= 2 && rnd() < 0.7) symptoms.push('Tired');
-    if (sleep < 6.25 && rnd() < 0.5) symptoms.push('Brain fog');
+    const tags = [];
+    if (cd <= 3 && rnd() < 0.7) tags.push('Cramps');
+    if ((cd >= 24 || cd <= 2) && rnd() < 0.6) tags.push('Bloated');
+    if (cd >= 23 && rnd() < 0.5) tags.push('Increased appetite');
+    if (energy <= 2 && rnd() < 0.7) tags.push('Fatigue');
+    if (sleep < 6.25 && rnd() < 0.5) tags.push('Brain fog');
+    if (mood >= 4 && rnd() < 0.5) tags.push('Happy');
+    const motivation = clamp(Math.round(energy*0.7 + 1 + noise(0.7)), 1, 5);
     const weight = rnd() < 0.85 ? Math.round((152 - i*-0.03 - (41-i)*0.04 + (cd >= 24 || cd <= 2 ? 1.6 : 0) + noise(1.4))*10)/10 : null;
-    entries[d] = { date:d, sleepHours:sleep, sleepQuality:sq, energy, mood, soreness:sore, stress, training, symptoms, weight, note:'' };
+    entries[d] = { date:d, sleepHours:sleep, sleepQuality:to10(sq), energy:to10(energy), mood:to10(mood), motivation:to10(motivation), stress:to10(stress), training, tags, weight, note:'' };
     prevLoad = LOAD[training];
   }
   return entries;
@@ -902,7 +935,7 @@ function importCSV(text){
   const head = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z]/g, ''));
   const find = (...names) => head.findIndex(h => names.includes(h));
   const ix = { date:find('date','day'), sleepHours:find('sleephours','sleep','hoursslept','sleephrs'), sleepQuality:find('sleepquality'),
-    energy:find('energy'), mood:find('mood'), soreness:find('soreness','sore'), stress:find('stress'), training:find('training','workout','load'), note:find('note','notes'), period:find('period','periodstart','periodstarted'), symptoms:find('symptoms','symptom','tags'), weight:find('weight','weightlb','weightkg','bodyweight') };
+    energy:find('energy'), mood:find('mood'), motivation:find('motivation'), stress:find('stress'), training:find('training','workout','load'), note:find('note','notes'), period:find('period','periodstart','periodstarted'), symptoms:find('symptoms','symptom','tags'), weight:find('weight','weightlb','weightkg','bodyweight') };
   if (ix.date < 0) throw new Error('No date column found.');
   let count = 0;
   for (const line of lines.slice(1)){
@@ -912,11 +945,13 @@ function importCSV(text){
     const num = (k, def) => { const v = parseFloat(c[ix[k]]); return ix[k] >= 0 && isFinite(v) ? v : def; };
     let tr = (ix.training >= 0 ? c[ix.training] : '').toLowerCase();
     tr = /lift|strength|weight|hard|3/.test(tr) ? 'lifting' : /cardio|cycl|bike|ride|run|spin|mod|light|2|1/.test(tr) ? 'cardio' : 'rest';
-    state.entries[date] = { date, sleepHours:clamp(num('sleepHours',7),0,14), sleepQuality:clamp(Math.round(num('sleepQuality',3)),1,5),
-      energy:clamp(Math.round(num('energy',3)),1,5), mood:clamp(Math.round(num('mood',3)),1,5), soreness:clamp(Math.round(num('soreness',2)),1,5),
-      stress:clamp(Math.round(num('stress',3)),1,5), training:tr, note: ix.note >= 0 ? (c[ix.note]||'') : '',
+    const r10 = k => { const v = num(k, null); return v == null ? null : clamp(Math.round(v),1,10); };
+    const sh = num('sleepHours', null);
+    state.entries[date] = { date, sleepHours: sh == null ? null : clamp(sh,0,14), sleepQuality:r10('sleepQuality'),
+      energy:r10('energy'), mood:r10('mood'), motivation:r10('motivation'),
+      stress:r10('stress'), training:tr, note: ix.note >= 0 ? (c[ix.note]||'') : '',
       weight: ix.weight >= 0 && isFinite(parseFloat(c[ix.weight])) ? parseFloat(c[ix.weight]) : null,
-      symptoms: ix.symptoms >= 0 ? SYMPTOMS.filter(x => (c[ix.symptoms]||'').toLowerCase().includes(x.toLowerCase())) : [] };
+      tags: ix.symptoms >= 0 ? TAGS.filter(x => (c[ix.symptoms]||'').toLowerCase().includes(x.toLowerCase())) : [] };
     if (ix.period >= 0 && /^(1|y|yes|true|x)$/i.test(c[ix.period]||'') && !state.periods.includes(date)) state.periods.push(date);
     count++;
   }
@@ -943,13 +978,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   if ('IntersectionObserver' in window) new IntersectionObserver(es => { $('#fab').style.display = es[0].isIntersecting ? 'none' : ''; }, { threshold:0.05 }).observe($('#checkin'));
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { renderForecast(); renderWeight(); }, 200); });
-  loadState(); buildSliders(); renderChips(); fillForm(todayStr()); renderAll();
+  loadState(); buildSliders(); fillForm(todayStr()); renderAll();
 
   $('#f-date').addEventListener('change', e => { if (e.target.value) fillForm(e.target.value); });
   $('#form').addEventListener('submit', e => {
     e.preventDefault();
     const date = $('#f-date').value; if (!date) return;
-    const entry = { date, sleepHours: clamp(parseFloat($('#f-sleep').value) || 0, 0, 14), training: $('#f-training').value, symptoms: [...formSymptoms], weight: (v => isFinite(v) && v > 0 ? Math.round(v*10)/10 : null)(parseFloat($('#f-weight').value)), note: $('#f-note').value.trim() };
+    const sh = parseFloat($('#f-sleep').value);
+    const entry = { date, sleepHours: isFinite(sh) ? clamp(sh, 0, 14) : null, training: $('#f-training').value, tags: [...selectedTags], weight: (v => isFinite(v) && v > 0 ? Math.round(v*10)/10 : null)(parseFloat($('#f-weight').value)), note: $('#f-note').value.trim() };
     SLIDERS.forEach(s => entry[s.id] = parseInt($('#f-'+s.id).value, 10));
     const existed = !!state.entries[date];
     state.periods = state.periods.filter(p => p !== date);
@@ -988,9 +1024,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (/\.json$/i.test(f.name) || text.trim().startsWith('{')){
         const s = JSON.parse(text);
         if (!s.entries) throw new Error('That JSON file doesn\'t look like a Daily Forecast export.');
-        state = { entries:s.entries, plans:s.plans||{}, periods:s.periods||[], settings:{ sleepTarget:7.5, ...(s.settings||{}) }, sample:!!s.sample };
-        Object.values(state.entries).forEach(x => { x.training = normTraining(x.training); if (!x.symptoms) x.symptoms = []; });
-        alert(`Imported ${Object.keys(state.entries).length} days.`);
+        const from5 = s.scale !== 10;
+        Object.values(s.entries).forEach(x => migrateEntry(x, from5));
+        if (state.sample){ state.entries = {}; state.plans = {}; state.periods = []; state.sample = false; }
+        let added = 0, kept = 0;
+        Object.entries(s.entries).forEach(([d,x]) => { if (state.entries[d]) kept++; else { state.entries[d] = x; added++; } });
+        state.plans = { ...(s.plans||{}), ...state.plans };
+        state.periods = [...new Set([...state.periods, ...(s.periods||[])])].sort();
+        if (s.settings) state.settings = { ...state.settings, ...s.settings };
+        state.scale = 10;
+        alert(`Imported ${added} days.${kept ? ` Kept ${kept} days you'd already logged in the app.` : ''}`);
       } else {
         if (state.sample){ state.entries = {}; state.periods = []; state.sample = false; }
         alert(`Imported ${importCSV(text)} days from CSV.`);

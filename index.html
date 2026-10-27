@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161614" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Forecast">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Daily Forecast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --surface:#fffdf9; --surface-2:#f0ede6; --ink:#24221f; --muted:#6d6860; --line:#e3ded4;
+  --strong:#4f8a63; --strong-bg:#e3efe5;
+  --steady:#ad7f26; --steady-bg:#f6ecd6;
+  --gentle:#7364ad; --gentle-bg:#ebe7f6;
+  --accent:#2f5d50; --accent-ink:#fff;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.05);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#161614; --surface:#1f1e1b; --surface-2:#292824; --ink:#ece8e0; --muted:#a39d92; --line:#36342e;
+    --strong:#7fbe92; --strong-bg:#1f3227;
+    --steady:#ddb05a; --steady-bg:#362c18;
+    --gentle:#ab9de6; --gentle-bg:#2b2642;
+    --accent:#8cc5b3; --accent-ink:#13201c;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 Inter,system-ui,-apple-system,Segoe UI,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 64px}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01em;margin:0}
+h1{font-size:30px}
+h2{font-size:20px;margin-bottom:12px}
+h3{font-size:16px}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-weight:500}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ghost{background:transparent}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+header .sub{color:var(--muted);margin-top:6px;max-width:560px}
+.today-label{font-size:13px;color:var(--muted);text-align:right}
+.today-label strong{display:block;color:var(--ink);font-size:15px}
+
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--surface-2);border:1px dashed var(--line);border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:14px}
+.banner[hidden]{display:none}
+
+/* outlook */
+.outlook{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-bottom:16px}
+@media (max-width:860px){.outlook{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:128px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}.day{scroll-snap-align:start}}
+.day{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:12px 12px 14px;display:flex;flex-direction:column;gap:6px;transition:transform .12s, border-color .12s}
+.day:hover{transform:translateY(-1px)}
+.day.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.day .dname{font-weight:600;font-size:14px}
+.day .ddate{font-size:12px;color:var(--muted)}
+.day .score{font-family:Fraunces,Georgia,serif;font-size:30px;line-height:1;margin-top:6px}
+.day .range{font-size:12px;color:var(--muted)}
+.meter{height:6px;border-radius:6px;background:var(--surface-2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;width:fit-content}
+.z-strong{--z:var(--strong);--zb:var(--strong-bg)}
+.z-steady{--z:var(--steady);--zb:var(--steady-bg)}
+.z-gentle{--z:var(--gentle);--zb:var(--gentle-bg)}
+.pill{background:var(--zb);color:var(--z)}
+.meter i{background:var(--z)}
+.tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+/* detail */
+.detail{display:grid;grid-template-columns:300px 1fr;gap:24px;margin-bottom:24px}
+@media (max-width:860px){.detail{grid-template-columns:1fr}}
+.detail .big{font-family:Fraunces,Georgia,serif;font-size:64px;line-height:1;color:var(--z)}
+.detail .left{border-right:1px solid var(--line);padding-right:24px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:860px){.detail .left{border-right:0;padding-right:0;border-bottom:1px solid var(--line);padding-bottom:18px}}
+.why{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.why li{display:flex;gap:8px;align-items:flex-start}
+.why .arrow{font-weight:700;width:14px;flex:none}
+.up{color:var(--strong)} .down{color:var(--gentle)}
+.plan{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:10px;padding:12px}
+.plan label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+.plan select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 8px}
+.headline{font-family:Fraunces,Georgia,serif;font-size:24px;margin-bottom:14px}
+.guide{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:700px){.guide{grid-template-columns:1fr}}
+.guide div{background:var(--surface-2);border-radius:10px;padding:14px}
+.guide h3{font-family:Inter,system-ui,sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:6px}
+.quote{margin-top:16px;border-left:3px solid var(--z);background:var(--zb);padding:14px 16px;border-radius:0 10px 10px 0;font-family:Fraunces,Georgia,serif;font-size:18px}
+
+/* lower grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+form .row{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+form .row.inline{flex-direction:row;gap:12px}
+form .row.inline > div{flex:1;display:flex;flex-direction:column;gap:4px}
+form label{font-weight:500;font-size:14px;display:flex;justify-content:space-between}
+form label output{font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:-2px}
+input[type=date],input[type=number],select,textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;width:100%}
+textarea{resize:vertical;min-height:60px}
+.toast{font-size:13px;color:var(--strong);margin-left:10px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:14px}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.word{font-family:Fraunces,Georgia,serif;font-size:20px;line-height:1.4;min-height:84px;padding:16px;border-radius:10px;background:var(--surface-2)}
+
+.patterns{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.pattern{display:flex;gap:12px;align-items:flex-start;font-size:14px}
+.pattern b{font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:600;min-width:52px;text-align:right;line-height:1.2}
+
+.chartwrap svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.acc{display:flex;gap:28px;flex-wrap:wrap;margin-top:14px}
+.acc div b{display:block;font-family:Fraunces,Georgia,serif;font-size:24px}
+
+details.card{padding:0}
+details.card summary{padding:16px 20px;cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+details.card summary::after{content:"+";color:var(--muted)}
+details[open].card summary::after{content:"–"}
+details.card .inner{padding:0 20px 20px;display:flex;flex-direction:column;gap:14px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.how p+p{margin-top:8px}
+
+.empty{text-align:center;padding:48px 20px}
+.empty h2{margin-bottom:8px}
+.empty p{max-width:460px;margin:0 auto 18px;color:var(--muted)}
+.fab{display:none}
+@media (max-width:860px){
+  .wrap{padding:calc(16px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom))}
+  h1{font-size:26px}
+  .today-label{text-align:left}
+  input[type=range]{height:32px}
+  input[type=date],input[type=number],select,textarea{font-size:16px;padding:10px 12px}
+  .chip{padding:9px 14px}
+  .btn{padding:11px 18px}
+  .fab{display:inline-flex;position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:10;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:14px 22px;font-weight:600;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+}
+footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Daily Forecast</h1>
+      <p class="sub">A seven-day outlook built from how your recent days actually went, plus a plan for each kind of day.</p>
+    </div>
+    <div class="today-label">Today<strong id="todayLabel"></strong></div>
+  </header>
+
+  <div class="banner" id="sampleBanner" hidden>
+    <span>You're looking at <strong>sample data</strong>. Clear it when you're ready to log your own days.</span>
+    <button class="btn ghost" id="clearSample">Clear sample data</button>
+  </div>
+  <div class="banner" id="storageBanner" hidden>
+    <span>Your browser is blocking local storage for this file, so check-ins won't be kept after you close it. Use <strong>Export</strong> under Data to save a copy.</span>
+  </div>
+
+  <section id="emptyState" class="card empty" hidden>
+    <h2>Your forecast starts with three check-ins</h2>
+    <p>Log how you feel for a few days below. The outlook gets sharper the more you log, and it learns which things move your days most.</p>
+    <div class="actions" style="justify-content:center">
+      <a class="btn primary" href="#checkin" style="text-decoration:none">Log today</a>
+      <button class="btn" id="loadSample">Explore with sample data</button>
+    </div>
+  </section>
+
+  <section id="forecastArea" hidden>
+    <div class="outlook" id="outlook"></div>
+    <div class="card detail" id="detail"></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card" id="checkin">
+      <h2>Daily check-in</h2>
+      <form id="form" autocomplete="off">
+        <div class="row inline">
+          <div><label for="f-date">Date</label><input type="date" id="f-date" required></div>
+          <div><label for="f-sleep">Hours slept</label><input type="number" id="f-sleep" min="0" max="14" step="0.25" value="7"></div>
+        </div>
+        <div class="row">
+          <label for="f-weight">Weight <span class="muted small">optional · <span class="unitLabel">lb</span></span></label>
+          <input type="number" id="f-weight" inputmode="decimal" min="50" max="700" step="0.1" placeholder="Skip if you didn't weigh in">
+        </div>
+        <div id="sliders"></div>
+        <div class="row">
+          <label for="f-training">Training today</label>
+          <select id="f-training">
+            <option value="rest">Rest Day</option>
+            <option value="cardio">Cardio Day</option>
+            <option value="lifting">Lifting Day</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Anything else today? <span class="muted small">tap all that apply</span></label>
+          <div class="chips" id="symptomChips" style="margin:4px 0 0"></div>
+        </div>
+        <div class="row">
+          <label style="justify-content:flex-start;gap:8px;font-weight:400"><input type="checkbox" id="f-period"> My period started this day</label>
+        </div>
+        <div class="row">
+          <label for="f-note">Note <span class="muted small">optional</span></label>
+          <textarea id="f-note" placeholder="Anything worth remembering about today"></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="submit" id="saveBtn">Save check-in</button>
+          <button class="btn ghost" type="button" id="deleteBtn" hidden>Delete this day</button>
+          <span class="toast" id="toast"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Need a word?</h2>
+      <p class="muted small">Pick whatever's closest to how you feel right now.</p>
+      <div class="chips" id="chips"></div>
+      <div class="word" id="word"></div>
+      <div class="actions" style="margin-top:10px"><button class="btn ghost" id="anotherWord">Another one</button></div>
+
+      <h2 style="margin-top:26px">What moves your days</h2>
+      <div class="patterns" id="patterns"></div>
+    </section>
+  </div>
+
+  <section class="card" id="trendCard" style="margin-bottom:20px" hidden>
+    <h2>Last four weeks and the week ahead</h2>
+    <div class="chartwrap" id="chart"></div>
+    <div class="legend">
+      <span style="--c:var(--ink)">How you felt (logged)</span>
+      <span style="--c:var(--accent)">Forecast</span>
+      <span style="--c:var(--muted)">Your usual</span>
+    </div>
+    <div class="acc" id="accuracy"></div>
+  </section>
+
+  <section class="card" id="weightCard" style="margin-bottom:20px" hidden>
+    <h2>Weight trend</h2>
+    <div class="acc" id="weightStats" style="margin:0 0 12px"></div>
+    <div class="chartwrap" id="weightChart"></div>
+    <div class="legend">
+      <span style="--c:var(--muted)">Daily weigh-ins</span>
+      <span style="--c:var(--accent)">7-day average</span>
+    </div>
+    <p class="small" id="weightNote" style="margin-top:12px"></p>
+  </section>
+
+  <details class="card" style="margin-bottom:14px">
+    <summary>How the forecast works</summary>
+    <div class="inner how small">
+      <p><strong>Your day score (0–100)</strong> comes from each check-in: energy counts most, then mood, stress, sleep quality, and soreness.</p>
+      <p><strong>"Your usual"</strong> is your average over the last 28 logged days. Day types are relative to that, so a "gentle" day means lower than <em>your</em> normal, not a grade.</p>
+      <p><strong>The forecast</strong> starts from your usual and adjusts for: recent sleep against your target (fading over a few days), recent momentum, training fatigue from the last four days (including sessions you plan ahead), weekday patterns in your own history, your cycle phase (projected from the period start dates you mark), and days you flag as big or stressful. As you log more, it learns how strongly sleep and training affect <em>you</em> specifically.</p>
+      <p><strong>Accuracy</strong> is checked by replaying your history: each logged day is forecast using only the days before it, then compared to what you actually logged.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Data &amp; settings</summary>
+    <div class="inner">
+      <div class="row" style="max-width:220px">
+        <label for="s-sleep" class="small" style="font-weight:500">Sleep target (hours)</label>
+        <input type="number" id="s-sleep" min="5" max="10" step="0.25">
+      </div>
+      <div class="row" style="max-width:220px">
+        <label for="s-unit" class="small" style="font-weight:500">Weight unit</label>
+        <select id="s-unit"><option value="lb">Pounds (lb)</option><option value="kg">Kilograms (kg)</option></select>
+      </div>
+      <div class="actions">
+        <button class="btn" id="exportBtn">Export (JSON)</button>
+        <button class="btn" id="importBtn">Import JSON or CSV</button>
+        <input type="file" id="importFile" accept=".json,.csv,text/csv,application/json" hidden>
+        <button class="btn" id="sampleBtn2">Load sample data</button>
+        <button class="btn ghost" id="clearAll">Clear everything</button>
+      </div>
+      <p class="muted small">CSV columns (any order): <code>date</code> (YYYY-MM-DD), <code>sleep_hours</code>, <code>sleep_quality</code>, <code>energy</code>, <code>mood</code>, <code>soreness</code>, <code>stress</code> (1–5 each), <code>training</code> (rest / cardio / lifting), <code>weight</code>, <code>symptoms</code> (e.g. "Bloated; Cramps"), <code>period</code> (yes on the day a period started), <code>note</code>. Everything stays in this browser; nothing is sent anywhere.</p>
+    </div>
+  </details>
+
+  <a class="fab" href="#checkin" id="fab">Check in</a>
+  <footer>A planning aid built from your own logs, not medical advice. If low days are frequent or getting worse, that's worth raising with a doctor.</footer>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,'0');
+const toStr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return toStr(d); };
+const diffDays = (a,b) => Math.round((parse(b)-parse(a))/864e5);
+const todayStr = () => toStr(new Date());
+const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+const clamp = (x,a,b) => Math.max(a, Math.min(b, x));
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtShort = s => { const d = parse(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hash = s => { let h = 0; for (const c of s) h = (h*31 + c.charCodeAt(0)) >>> 0; return h; };
+function slope(xs, ys){
+  const n = xs.length; if (n < 3) return NaN;
+  const mx = mean(xs), my = mean(ys); let num = 0, den = 0;
+  for (let i=0;i<n;i++){ num += (xs[i]-mx)*(ys[i]-my); den += (xs[i]-mx)**2; }
+  return den ? num/den : NaN;
+}
+
+/* ---------- state ---------- */
+const KEY = 'dailyForecast.v1';
+const LOAD = { rest:0, cardio:2, lifting:3, none:0, light:1, moderate:2, hard:3 };
+const normTraining = t => ({ none:'rest', light:'cardio', moderate:'cardio', hard:'lifting' })[t] || t || 'rest';
+const SYMPTOMS = ['Bloated','Brain fog','Increased appetite','Cramps','Tired'];
+let storageOk = true;
+let state = { entries:{}, plans:{}, periods:[], settings:{ sleepTarget:7.5, unit:'lb' }, sample:false };
+function loadState(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) { const s = JSON.parse(raw); state = { ...state, ...s, periods: s.periods || [], settings:{ ...state.settings, ...(s.settings||{}) } }; }
+    Object.values(state.entries).forEach(e => { e.training = normTraining(e.training); if (!e.symptoms) e.symptoms = []; });
+    Object.values(state.plans).forEach(p => { if (p.load) p.load = normTraining(p.load); });
+  } catch(e){ storageOk = false; }
+}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){ storageOk = false; } }
+
+/* ---------- scoring ---------- */
+function readiness(e){
+  const n = x => (clamp(x,1,5)-1)/4;
+  return Math.round(100*(0.35*n(e.energy) + 0.25*n(e.mood) + 0.15*n(e.sleepQuality) + 0.10*(1-n(e.soreness)) + 0.15*(1-n(e.stress))));
+}
+function zoneOf(score, base){
+  const diff = score - base;
+  if (score < 38 || diff <= -6) return 'gentle';
+  if (diff >= 4 && score >= 45) return 'strong';
+  return 'steady';
+}
+
+/* ---------- cycle ---------- */
+function cycleLength(){
+  const p = [...new Set(state.periods)].sort(); const gaps = [];
+  for (let i=1;i<p.length;i++){ const g = diffDays(p[i-1], p[i]); if (g >= 20 && g <= 45) gaps.push(g); }
+  return gaps.length ? Math.round(mean(gaps.slice(-6))) : 28;
+}
+function cycleInfo(d){
+  const p = [...new Set(state.periods)].filter(x => x <= d).sort();
+  if (!p.length) return null;
+  const len = cycleLength();
+  const gap = diffDays(p[p.length-1], d);
+  if (gap > len*3) return null;
+  const day = (gap % len) + 1, projected = gap >= len;
+  const ov = len - 14;
+  let phase;
+  if (day <= 5) phase = 'menstrual';
+  else if (day < ov - 1) phase = 'follicular';
+  else if (day <= ov + 1) phase = 'ovulatory';
+  else if (day <= len - 6) phase = 'luteal';
+  else phase = 'premenstrual';
+  return { day, phase, len, projected };
+}
+const PHASE_NAMES = { menstrual:'Period', follicular:'Follicular', ovulatory:'Around-ovulation', luteal:'Luteal', premenstrual:'Premenstrual' };
+
+/* ---------- model ---------- */
+function buildModel(cutoff){
+  const all = Object.keys(state.entries).filter(d => d <= cutoff).sort();
+  if (all.length < 3) return null;
+  const R = d => readiness(state.entries[d]);
+  const recent = all.slice(-28);
+  const base = mean(recent.map(R));
+  const target = state.settings.sleepTarget;
+
+  const loadOn = d => {
+    if (d <= cutoff) { const e = state.entries[d]; return e ? (LOAD[e.training]||0) : 0; }
+    const p = state.plans[d]; return p && p.load ? (LOAD[p.load]||0) : 0;
+  };
+  const fatigue = d => { let f = 0; for (let g=1; g<=4; g++) f += loadOn(addDays(d,-g)) * Math.pow(0.55, g-1); return f; };
+
+  const n = recent.length;
+  const fats = recent.map(fatigue);
+  const meanFat = mean(fats);
+  const sl = slope(recent.map(d => state.entries[d].sleepHours), recent.map(R));
+  const sleepSens = clamp(((isFinite(sl) ? sl : 4)*n + 4*10)/(n+10), 1, 10);
+  const fl = slope(fats, recent.map(R));
+  const loadSens = clamp(((isFinite(fl) ? -fl : 3)*n + 3*10)/(n+10), 0.5, 8);
+
+  const hist = all.slice(-56);
+  const dsum = Array(7).fill(0), dcnt = Array(7).fill(0);
+  hist.forEach(d => {
+    const w = parse(d).getDay();
+    dsum[w] += R(d) - base + (fatigue(d) - meanFat)*loadSens; // remove what training already explains
+    dcnt[w]++;
+  });
+  const dowEff = w => dsum[w]/(dcnt[w]+3);
+  const psum = {}, pcnt = {};
+  hist.forEach(d => {
+    const c = cycleInfo(d); if (!c) return;
+    const r = R(d) - base + (fatigue(d) - meanFat)*loadSens - dowEff(parse(d).getDay());
+    psum[c.phase] = (psum[c.phase]||0) + r; pcnt[c.phase] = (pcnt[c.phase]||0) + 1;
+  });
+  const phaseEff = ph => (psum[ph]||0)/((pcnt[ph]||0)+3);
+
+  const last3 = all.slice(-3);
+  const momentum = mean(last3.map(R)) - base;
+  const avgSleep = mean(last3.map(d => state.entries[d].sleepHours));
+  const debt = avgSleep - target;
+
+  return {
+    base, n: all.length, cutoff, avgSleep, sleepSens, loadSens, dowEff, dcnt, phaseEff,
+    forecast(d){
+      const k = Math.max(1, diffDays(cutoff, d));
+      const w = parse(d).getDay();
+      const parts = [];
+      parts.push({ key:'dow', v: dowEff(w), w });
+      const cyc = cycleInfo(d);
+      if (cyc) parts.push({ key:'cycle', v: phaseEff(cyc.phase), phase: cyc.phase });
+      parts.push({ key:'mom', v: momentum*0.5*Math.pow(0.6, k-1) });
+      parts.push({ key:'sleep', v: clamp(debt*sleepSens*0.6, -14, 5)*Math.pow(0.55, k-1) });
+      let planned = false;
+      for (let g=1; g<=4; g++){ const dd = addDays(d,-g); if (dd > cutoff && state.plans[dd] && LOAD[state.plans[dd].load] > 0) planned = true; }
+      parts.push({ key:'load', v: -(fatigue(d) - meanFat)*loadSens, planned });
+      const p = state.plans[d];
+      if (p && p.big) parts.push({ key:'big', v:-4 });
+      const raw = base + parts.reduce((a,b) => a+b.v, 0);
+      const score = Math.round(clamp(raw, 5, 98));
+      const band = Math.round((5 + 1.5*k) * (all.length < 14 ? 1.4 : 1));
+      return { score, band, zone: zoneOf(score, base), parts, k };
+    }
+  };
+}
+
+function driverText(p, model){
+  const up = p.v > 0;
+  switch (p.key){
+    case 'dow': return up ? `${DAYS[p.w]}s tend to go better for you` : `${DAYS[p.w]}s tend to run lower for you`;
+    case 'mom': return up ? `You're on an upswing lately` : `The last few days have been heavy, and that tends to linger a little`;
+    case 'sleep': return up ? `Sleep has been solid (about ${model.avgSleep.toFixed(1)} h a night)` : `Running short on sleep (about ${model.avgSleep.toFixed(1)} h vs your ${state.settings.sleepTarget} h target)`;
+    case 'load': return up ? `Lighter training lately, so you should be fresh` : (p.planned ? `Recovering from planned training` : `Still recovering from recent training`);
+    case 'cycle': return up ? `${PHASE_NAMES[p.phase]} days tend to go better for you` : `${PHASE_NAMES[p.phase]} days tend to run lower for you`;
+    case 'big': return `You flagged this as a big or stressful day`;
+  }
+  return '';
+}
+
+/* ---------- guidance copy ---------- */
+const ZONES = {
+  strong: {
+    name:'Strong day', headline:'A good day to lean in.',
+    train:'Put your heaviest lift or hardest session here. If a top set or PR attempt is on the plan, this is the day for it.',
+    life:'Schedule your hardest focus work in your best hours. Make the call or decision you\'ve been putting off.',
+    mind:'Use it, but don\'t spend all of it. Prep tomorrow\'s meals or plan, so today\'s energy carries forward.'
+  },
+  steady: {
+    name:'Steady day', headline:'A solid, ordinary day.',
+    train:'Run the plan as written and stop a rep or two short of failure. Consistency is the win here.',
+    life:'Pick one or two real priorities. Let everything else be maintenance.',
+    mind:'Ordinary days are where most results actually come from. Nothing needs to be heroic.'
+  },
+  gentle: {
+    name:'Gentle day', headline:'A day to go easy, on purpose.',
+    train:'Swap heavy work for a walk, mobility, or light technique practice, or rest fully. Recovery is when training actually turns into progress.',
+    life:'Choose one must-do and count it as a full win. Lower the bar on everything else, and say so out loud if that helps.',
+    mind:'This is weather, not a verdict on you. Planning around it is the smart move, not the lazy one.'
+  }
+};
+const ZONE_WORDS = {
+  strong: [
+    'Enjoy this one. You set it up with the days before it.',
+    'Good days are earned quietly. This one is yours.',
+    'Go get it, and leave a little in the tank for later this week.',
+    'This is what all the steady days were building toward.'
+  ],
+  steady: [
+    'Boring and consistent beats brilliant and occasional.',
+    'An ordinary day done well is a good day.',
+    'You don\'t need a great day to make progress. You need a normal one, repeated.',
+    'Show up, do the plan, go home. That\'s the whole trick.'
+  ],
+  gentle: [
+    'Rest isn\'t the opposite of progress. It\'s where progress happens.',
+    'A low day is weather, not a verdict.',
+    'Doing less today is a choice made with good information. That\'s discipline.',
+    'Your consistency is measured in months, not in any single day.',
+    'You don\'t have to earn rest.',
+    'Showing up at sixty percent still counts as showing up.'
+  ]
+};
+const FEELINGS = {
+  'Drained': [
+    'Low battery is information, not a character flaw.',
+    'Do the smallest useful thing, then let that be enough.',
+    'Water, food, daylight, a short walk. Start with the basics and check back in an hour.',
+    'Tired bodies need less, not more. Give yours less today.'
+  ],
+  'Guilty for resting': [
+    'Rest is a training input, same as sets and reps.',
+    'You\'d tell a friend to take the day. Give yourself the same deal.',
+    'Recovering well today is how you get a better day later this week.',
+    'Nobody gets stronger during the workout. It happens while you rest.'
+  ],
+  'Feeling behind': [
+    'Behind compared to what? Plans bend; they don\'t break.',
+    'You can\'t make up a missed day by punishing the next one. Just take the next normal step.',
+    'A year of progress is mostly average weeks with a few gaps. That\'s what it\'s supposed to look like.',
+    'Starting again is a skill, and you\'re practicing it right now.'
+  ],
+  'Unmotivated': [
+    'Motivation usually shows up after you start, not before. Try five minutes.',
+    'Lower the bar until it\'s easy to step over.',
+    'You don\'t have to want to. You just have to begin, and you\'re allowed to stop.',
+    'Smallest version of the task, right now. Then decide.'
+  ],
+  'Bloated': [
+    'Bloating changes how your body feels, not what it is. It passes.',
+    'The mirror and the scale are unreliable on bloated days. Judge your progress on a different one.',
+    'Comfortable clothes, water, a gentle walk. Be kind to your middle today.',
+    'This is temporary. Your progress isn\'t going anywhere.'
+  ],
+  'Brain fog': [
+    'Foggy days are for easy wins. Save big decisions for a clearer day.',
+    'Write things down and stop trusting your memory for today. That\'s a strategy, not a weakness.',
+    'One task at a time, slower than usual. It still counts.',
+    'You\'re not less capable today. You\'re working through static.'
+  ],
+  'Increased appetite': [
+    'Hunger is information, not a failure of willpower.',
+    'Your body may be asking for more fuel right now. Feeding it well is part of the plan.',
+    'Eat a real meal with some protein and move on without guilt.',
+    'Muscle is built with fuel. Eating enough is doing the work.'
+  ],
+  'Cramps': [
+    'Pain is a real reason to adjust. Adjusting isn\'t quitting.',
+    'Heat, gentle movement, and a lower bar today.',
+    'You don\'t owe anyone a workout through pain.',
+    'Take care of yourself the way you\'d take care of someone you love.'
+  ],
+  'Tired': [
+    'Tired is a signal, not a character trait.',
+    'An early night is one of the best training decisions you can make.',
+    'Do the minimum that keeps you on track, then rest.',
+    'Rest now so you have something to give later.'
+  ],
+  'Proud of myself': [
+    'Good. Notice it. Let it count.',
+    'Write down what went right today so you can find it again.',
+    'This feeling is data too. Remember what led to it.',
+    'You did that. Keep the receipt.'
+  ]
+};
+
+/* ---------- UI: check-in form ---------- */
+const SLIDERS = [
+  { id:'energy', label:'Energy', lo:'Drained', hi:'Charged' },
+  { id:'mood', label:'Mood', lo:'Low', hi:'Great' },
+  { id:'sleepQuality', label:'Sleep quality', lo:'Restless', hi:'Deep' },
+  { id:'soreness', label:'Soreness', lo:'None', hi:'Very sore' },
+  { id:'stress', label:'Stress', lo:'Calm', hi:'Maxed out' }
+];
+function buildSliders(){
+  $('#sliders').innerHTML = SLIDERS.map(s => `
+    <div class="row">
+      <label for="f-${s.id}">${s.label} <output id="o-${s.id}">3</output></label>
+      <input type="range" id="f-${s.id}" min="1" max="5" step="1" value="3">
+      <div class="ends"><span>${s.lo}</span><span>${s.hi}</span></div>
+    </div>`).join('');
+  SLIDERS.forEach(s => $('#f-'+s.id).addEventListener('input', e => $('#o-'+s.id).textContent = e.target.value));
+}
+let formSymptoms = [];
+function renderSymptomChips(){
+  $('#symptomChips').innerHTML = SYMPTOMS.map(x => `<button type="button" class="chip ${formSymptoms.includes(x)?'on':''}" data-s="${esc(x)}" aria-pressed="${formSymptoms.includes(x)}">${esc(x)}</button>`).join('');
+  document.querySelectorAll('#symptomChips .chip').forEach(c => c.addEventListener('click', () => {
+    const v = c.dataset.s; formSymptoms = formSymptoms.includes(v) ? formSymptoms.filter(x => x !== v) : [...formSymptoms, v]; renderSymptomChips();
+  }));
+}
+function fillForm(date){
+  const e = state.entries[date];
+  $('#f-date').value = date;
+  $('#f-sleep').value = e ? e.sleepHours : 7;
+  $('#f-weight').value = e && e.weight ? e.weight : '';
+  SLIDERS.forEach(s => { const v = e ? e[s.id] : 3; $('#f-'+s.id).value = v; $('#o-'+s.id).textContent = v; });
+  $('#f-training').value = e ? normTraining(e.training) : 'rest';
+  formSymptoms = e && e.symptoms ? [...e.symptoms] : []; renderSymptomChips();
+  $('#f-note').value = e ? (e.note||'') : '';
+  $('#f-period').checked = state.periods.includes(date);
+  $('#saveBtn').textContent = e ? 'Update check-in' : 'Save check-in';
+  $('#deleteBtn').hidden = !e;
+}
+function flash(msg){ const t = $('#toast'); t.textContent = msg; clearTimeout(flash.t); flash.t = setTimeout(() => t.textContent = '', 3500); }
+
+/* ---------- UI: forecast ---------- */
+let selected = null;
+function outlookDays(model){
+  const t = todayStr(); const out = [];
+  for (let i=0; i<7; i++){
+    const d = addDays(t, i); const e = state.entries[d];
+    if (e){ const s = readiness(e); out.push({ date:d, logged:true, score:s, zone:zoneOf(s, model.base), parts:[] }); }
+    else out.push({ date:d, logged:false, ...model.forecast(d) });
+  }
+  return out;
+}
+function dayLabel(d){ const i = diffDays(todayStr(), d); return i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : DAYS[parse(d).getDay()]; }
+
+function renderForecast(){
+  const t = todayStr();
+  const latest = Object.keys(state.entries).filter(d => d <= t).sort().pop();
+  const model = latest ? buildModel(latest) : null;
+  $('#emptyState').hidden = !!model;
+  $('#forecastArea').hidden = !model;
+  $('#trendCard').hidden = !model;
+  if (!model) return;
+
+  const days = outlookDays(model);
+  if (!selected || !days.find(x => x.date === selected)) selected = days[0].date;
+
+  $('#outlook').innerHTML = days.map(x => `
+    <button class="day z-${x.zone} ${x.date===selected?'sel':''}" data-date="${x.date}">
+      <span class="dname">${dayLabel(x.date)}</span>
+      <span class="ddate">${fmtShort(x.date)}</span>
+      <span class="score">${x.score}</span>
+      <div class="meter"><i style="width:${x.score}%"></i></div>
+      <span class="pill">${ZONES[x.zone].name.replace(' day','')}</span>
+      <span class="range">${x.logged ? 'Logged' : '± ' + x.band}</span>
+    </button>`).join('');
+  document.querySelectorAll('.day').forEach(b => b.addEventListener('click', () => { selected = b.dataset.date; renderForecast(); }));
+
+  const x = days.find(d => d.date === selected);
+  const z = ZONES[x.zone];
+  const drivers = x.parts.filter(p => Math.abs(p.v) >= 2).sort((a,b) => Math.abs(b.v)-Math.abs(a.v)).slice(0,4);
+  const words = ZONE_WORDS[x.zone];
+  const word = words[hash(x.date) % words.length];
+  const plan = state.plans[x.date] || {};
+  const d = parse(x.date);
+
+  $('#detail').className = `card detail z-${x.zone}`;
+  $('#detail').innerHTML = `
+    <div class="left">
+      <div>
+        <div class="tag">${DAYS[d.getDay()]}, ${fmtShort(x.date)} · ${x.logged ? 'Logged' : 'Forecast'}${(() => { const c = cycleInfo(x.date); return c ? ` · Cycle day ${c.day}${c.projected ? ' (est.)' : ''}` : ''; })()}</div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-top:6px">
+          <span class="big">${x.score}</span>
+          <span class="pill">${z.name}</span>
+        </div>
+        <p class="muted small" style="margin-top:6px">Your usual is ${Math.round(model.base)}.${x.logged ? '' : ` Likely range ${clamp(x.score-x.band,0,100)}–${clamp(x.score+x.band,0,100)}.`}</p>
+      </div>
+      ${x.logged && (state.entries[x.date].symptoms||[]).length ? `<div class="chips" style="margin:0">${state.entries[x.date].symptoms.map(y => `<span class="chip" style="cursor:default">${esc(y)}</span>`).join('')}</div>` : ''}
+      ${x.logged && state.entries[x.date].weight ? `<p class="small muted">Weigh-in: ${state.entries[x.date].weight} ${state.settings.unit}</p>` : ''}
+      ${x.logged ? `<p class="small">${state.entries[x.date].note ? '“' + esc(state.entries[x.date].note) + '”' : 'You logged this day. Edit it in the check-in below.'}</p>` : `
+      <div>
+        <h3 style="margin-bottom:8px">Why</h3>
+        <ul class="why">${drivers.length ? drivers.map(p => `<li><span class="arrow ${p.v>0?'up':'down'}">${p.v>0?'↑':'↓'}</span><span>${driverText(p, model)}</span></li>`).join('') : '<li class="muted">Nothing unusual. Tracking close to your normal.</li>'}</ul>
+      </div>
+      <div class="plan">
+        <label>Training planned
+          <select id="planLoad">
+            ${['rest','cardio','lifting'].map(v => `<option value="${v}" ${(plan.load||'rest')===v?'selected':''}>${{rest:'Rest / nothing yet',cardio:'Cardio Day',lifting:'Lifting Day'}[v]}</option>`).join('')}
+          </select>
+        </label>
+        <label>Big or stressful day <input type="checkbox" id="planBig" ${plan.big?'checked':''}></label>
+        <span class="muted small">Planning a lifting or cardio day shows up in the days after it.</span>
+      </div>`}
+    </div>
+    <div>
+      <p class="headline">${z.headline}</p>
+      <div class="guide">
+        <div><h3>Training</h3><p>${z.train}</p></div>
+        <div><h3>The rest of your day</h3><p>${z.life}</p></div>
+        <div><h3>Keep in mind</h3><p>${z.mind}</p></div>
+      </div>
+      <div class="quote">${word}</div>
+    </div>`;
+
+  if (!x.logged){
+    const upd = () => {
+      const load = $('#planLoad').value, big = $('#planBig').checked;
+      if (load === 'rest' && !big) delete state.plans[x.date]; else state.plans[x.date] = { load, big };
+      save(); renderAll();
+    };
+    $('#planLoad').addEventListener('change', upd);
+    $('#planBig').addEventListener('change', upd);
+  }
+
+  renderChart(model, days);
+  renderAccuracy();
+}
+
+/* ---------- chart ---------- */
+function renderChart(model, days){
+  const t = todayStr();
+  const start = addDays(t, -27), end = addDays(t, 6);
+  const total = diffDays(start, end);
+  const W = clamp($('#chart').clientWidth || 900, 320, 900), H = 240, L = 36, Rr = 12, T = 14, B = 30;
+  const X = d => L + (diffDays(start, d)/total)*(W-L-Rr);
+  const Y = v => T + (1 - v/100)*(H-T-B);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Day scores over the last four weeks and forecast for the next week">`;
+  [0,25,50,75,100].forEach(v => svg += `<line x1="${L}" x2="${W-Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`);
+  svg += `<rect x="${X(t)-6}" y="${T}" width="${W-Rr-X(t)+6}" height="${H-T-B}" fill="var(--surface-2)" opacity=".6"/>`;
+  for (let i=0; i<=total; i+=(W < 600 ? 14 : 7)){ const d = addDays(start, i); svg += `<text x="${X(d)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtShort(d)}</text>`; }
+  svg += `<line x1="${L}" x2="${W-Rr}" y1="${Y(model.base)}" y2="${Y(model.base)}" stroke="var(--muted)" stroke-dasharray="4 4" stroke-width="1.5"/>`;
+  const logged = Object.keys(state.entries).filter(d => d >= start && d <= end).sort();
+  if (logged.length){
+    svg += `<polyline fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round" points="${logged.map(d => `${X(d)},${Y(readiness(state.entries[d]))}`).join(' ')}"/>`;
+    logged.forEach(d => { const s = readiness(state.entries[d]); svg += `<circle cx="${X(d)}" cy="${Y(s)}" r="3" fill="var(--ink)"><title>${fmtShort(d)}: ${s}</title></circle>`; });
+  }
+  const fc = days.filter(x => !x.logged);
+  fc.forEach(x => svg += `<line x1="${X(x.date)}" x2="${X(x.date)}" y1="${Y(clamp(x.score+x.band,0,100))}" y2="${Y(clamp(x.score-x.band,0,100))}" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" opacity=".25"/>`);
+  if (fc.length > 1) svg += `<polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4" points="${fc.map(x => `${X(x.date)},${Y(x.score)}`).join(' ')}"/>`;
+  fc.forEach(x => svg += `<circle cx="${X(x.date)}" cy="${Y(x.score)}" r="4.5" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"><title>${fmtShort(x.date)} forecast: ${x.score} ± ${x.band}</title></circle>`);
+  svg += `<text x="${X(t)+2}" y="${T+12}" font-size="11" fill="var(--muted)">Ahead</text></svg>`;
+  $('#chart').innerHTML = svg;
+}
+
+function backtest(){
+  const dates = Object.keys(state.entries).sort(); const res = [];
+  for (let i=7; i<dates.length; i++){
+    const m = buildModel(dates[i-1]); if (!m) continue;
+    const f = m.forecast(dates[i]); const a = readiness(state.entries[dates[i]]);
+    res.push({ err: Math.abs(f.score - a), hit: zoneOf(a, m.base) === f.zone });
+  }
+  return res.slice(-60);
+}
+function renderAccuracy(){
+  const r = backtest();
+  if (r.length < 5){ $('#accuracy').innerHTML = `<p class="muted small">Accuracy appears after about two weeks of check-ins.</p>`; return; }
+  const mae = Math.round(mean(r.map(x => x.err)));
+  const hit = Math.round(100*mean(r.map(x => x.hit ? 1 : 0)));
+  $('#accuracy').innerHTML = `
+    <div><b>± ${mae}</b><span class="muted small">typical miss, next-day forecast</span></div>
+    <div><b>${hit}%</b><span class="muted small">of days the day type was right</span></div>
+    <div><b>${r.length}</b><span class="muted small">days checked</span></div>`;
+}
+
+/* ---------- weight ---------- */
+function rollingAvg(d, pts){
+  const win = pts.filter(p => p.d <= d && diffDays(p.d, d) < 7);
+  return win.length ? mean(win.map(p => p.w)) : null;
+}
+function renderWeight(){
+  const u = state.settings.unit;
+  document.querySelectorAll('.unitLabel').forEach(el => el.textContent = u);
+  const pts = Object.keys(state.entries).sort().filter(d => state.entries[d].weight).map(d => ({ d, w: state.entries[d].weight }));
+  $('#weightCard').hidden = pts.length < 2;
+  if (pts.length < 2) return;
+  const last = pts[pts.length-1];
+  const avgNow = rollingAvg(last.d, pts);
+  const prevPts = pts.filter(p => diffDays(p.d, last.d) >= 7);
+  const avgPrev = prevPts.length ? rollingAvg(prevPts[prevPts.length-1].d, pts) : null;
+  const recent = pts.filter(p => diffDays(p.d, last.d) < 14).map(p => p.w);
+  const swing = Math.max(...recent) - Math.min(...recent);
+  const f = x => x.toFixed(1);
+  const wk = avgPrev != null ? avgNow - avgPrev : null;
+  $('#weightStats').innerHTML = `
+    <div><b>${f(avgNow)}</b><span class="muted small">7-day average (${u})</span></div>
+    ${wk != null ? `<div><b>${wk > 0 ? '+' : ''}${f(wk)}</b><span class="muted small">vs. the week before</span></div>` : ''}
+    <div><b>${f(swing)}</b><span class="muted small">day-to-day range, last 2 weeks</span></div>`;
+
+  // chart: last 42 days
+  const t = todayStr(); const start = addDays(t, -41);
+  const shown = pts.filter(p => p.d >= start);
+  const W = clamp($('#weightChart').clientWidth || 900, 320, 900), H = 200, L = 44, Rr = 12, T = 12, B = 28;
+  const ws = shown.map(p => p.w); const lo = Math.floor(Math.min(...ws) - 1), hi = Math.ceil(Math.max(...ws) + 1);
+  const X = d => L + (diffDays(start, d)/41)*(W-L-Rr);
+  const Y = v => T + (1 - (v-lo)/(hi-lo||1))*(H-T-B);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily weight and seven-day average">`;
+  const step = Math.max(1, Math.round((hi-lo)/4));
+  for (let v = lo; v <= hi; v += step) svg += `<line x1="${L}" x2="${W-Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`;
+  for (let i=0; i<=41; i+=(W < 600 ? 14 : 7)){ const d = addDays(start, i); svg += `<text x="${X(d)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtShort(d)}</text>`; }
+  shown.forEach(p => svg += `<circle cx="${X(p.d)}" cy="${Y(p.w)}" r="3.5" fill="var(--muted)" opacity=".55"><title>${fmtShort(p.d)}: ${f(p.w)} ${u}</title></circle>`);
+  const avgLine = shown.map(p => `${X(p.d)},${Y(rollingAvg(p.d, pts))}`).join(' ');
+  svg += `<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" points="${avgLine}"/></svg>`;
+  $('#weightChart').innerHTML = svg;
+
+  const c = cycleInfo(last.d);
+  const cycleNote = c && (c.phase === 'premenstrual' || c.phase === 'menstrual')
+    ? ` You're in the ${c.phase === 'premenstrual' ? 'premenstrual' : 'period'} part of your cycle, when water retention commonly pushes the scale up for a few days.` : '';
+  $('#weightNote').innerHTML = `Daily weight moves with water, salt, carbs, training soreness, and your cycle. A ${f(swing)} ${u} swing over two weeks is ordinary. The 7-day average is the number that tells you anything.${cycleNote}`;
+}
+
+/* ---------- patterns ---------- */
+function renderPatterns(){
+  const dates = Object.keys(state.entries).sort();
+  if (dates.length < 10){ $('#patterns').innerHTML = `<p class="muted small">Patterns show up after about 10 check-ins. ${dates.length ? `You have ${dates.length}.` : ''}</p>`; return; }
+  const R = d => readiness(state.entries[d]);
+  const target = state.settings.sleepTarget;
+  const out = [];
+  const good = dates.filter(d => state.entries[d].sleepHours >= target).map(R);
+  const short = dates.filter(d => state.entries[d].sleepHours < target - 1).map(R);
+  if (good.length >= 3 && short.length >= 3){
+    const diff = Math.round(mean(good) - mean(short));
+    out.push([`${diff>0?'+':''}${diff}`, `Days after you hit your ${target} h sleep target score ${Math.abs(diff)} points ${diff>=0?'higher':'lower'} than days after short sleep (under ${target-1} h).`]);
+  }
+  const afterHard = [], afterEasy = [];
+  dates.forEach(d => { const prev = state.entries[addDays(d,-1)]; if (!prev) return; (normTraining(prev.training) === 'lifting' ? afterHard : normTraining(prev.training) === 'rest' ? afterEasy : []).push(R(d)); });
+  if (afterHard.length >= 3 && afterEasy.length >= 3){
+    const diff = Math.round(mean(afterHard) - mean(afterEasy));
+    out.push([`${diff>0?'+':''}${diff}`, `The day after a lifting day runs ${Math.abs(diff)} points ${diff>=0?'higher':'lower'} than the day after a rest day.`]);
+  }
+  const by = Array.from({length:7}, () => []);
+  dates.forEach(d => by[parse(d).getDay()].push(R(d)));
+  const avgs = by.map((a,i) => ({ i, n:a.length, v:mean(a) })).filter(x => x.n >= 2);
+  if (avgs.length >= 4){
+    avgs.sort((a,b) => b.v - a.v);
+    const hi = avgs[0], lo = avgs[avgs.length-1];
+    if (hi.v - lo.v >= 5) out.push([`${Math.round(hi.v - lo.v)}`, `Point gap between your best weekday (${DAYS[hi.i]}s) and your toughest (${DAYS[lo.i]}s). Worth planning around.`]);
+  }
+  let worst = null;
+  SYMPTOMS.forEach(sym => {
+    const yes = dates.filter(d => (state.entries[d].symptoms||[]).includes(sym)).map(R);
+    const no = dates.filter(d => !(state.entries[d].symptoms||[]).includes(sym)).map(R);
+    if (yes.length >= 3 && no.length >= 3){ const g = mean(no) - mean(yes); if (g >= 5 && (!worst || g > worst.g)) worst = { sym, g, n: yes.length }; }
+  });
+  if (worst) out.push([`${Math.round(worst.g)}`, `Points lower on days you log ${worst.sym.toLowerCase()} (${worst.n} days so far). Those are good days to lean on your gentle-day plan.`]);
+  const ph = {};
+  dates.forEach(d => { const c = cycleInfo(d); if (c) (ph[c.phase] = ph[c.phase] || []).push(R(d)); });
+  const pv = Object.entries(ph).filter(([,a]) => a.length >= 3).map(([k,a]) => ({ k, v:mean(a) })).sort((a,b) => b.v - a.v);
+  if (pv.length >= 3 && pv[0].v - pv[pv.length-1].v >= 5)
+    out.push([`${Math.round(pv[0].v - pv[pv.length-1].v)}`, `Point gap between your best cycle phase (${PHASE_NAMES[pv[0].k].toLowerCase()}) and your toughest (${PHASE_NAMES[pv[pv.length-1].k].toLowerCase()}). Your outlook already accounts for it.`]);
+  $('#patterns').innerHTML = out.length ? out.map(([b,t]) => `<div class="pattern"><b>${b}</b><span>${t}</span></div>`).join('') : `<p class="muted small">No strong patterns yet. Your days are fairly even across sleep, training, and weekdays.</p>`;
+}
+
+/* ---------- encouragement ---------- */
+let feeling = null, wordIdx = 0;
+function renderChips(){
+  $('#chips').innerHTML = Object.keys(FEELINGS).map(f => `<button class="chip ${f===feeling?'on':''}" data-f="${esc(f)}">${esc(f)}</button>`).join('');
+  document.querySelectorAll('#chips .chip').forEach(c => c.addEventListener('click', () => { feeling = c.dataset.f; wordIdx = Math.floor(Math.random()*FEELINGS[feeling].length); renderChips(); renderWord(); }));
+}
+function currentPool(){
+  if (feeling) return FEELINGS[feeling];
+  const t = todayStr(); const latest = Object.keys(state.entries).filter(d => d <= t).sort().pop();
+  const m = latest ? buildModel(latest) : null;
+  if (!m) return ZONE_WORDS.steady;
+  const e = state.entries[t];
+  const zone = e ? zoneOf(readiness(e), m.base) : m.forecast(t).zone;
+  return ZONE_WORDS[zone];
+}
+function renderWord(){ const pool = currentPool(); $('#word').textContent = pool[wordIdx % pool.length]; }
+
+/* ---------- sample data ---------- */
+function makeSample(){
+  let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  const noise = s => (rnd()+rnd()+rnd()-1.5)*s;
+  const entries = {}; const t = todayStr();
+  const sched = { 1:'lifting', 2:'cardio', 3:'lifting', 4:'rest', 5:'lifting', 6:'cardio', 0:'rest' };
+  let prevLoad = 0;
+  state.periods = [addDays(t,-60), addDays(t,-31), addDays(t,-2)];
+  for (let i=41; i>=1; i--){
+    const d = addDays(t, -i); const w = parse(d).getDay();
+    let sleep = 7.3 + noise(1.6) - (w === 1 ? 0.9 : 0) - (w === 4 ? 0.4 : 0);
+    sleep = Math.round(clamp(sleep, 4.5, 9.5)*4)/4;
+    const training = rnd() < 0.12 ? 'rest' : sched[w];
+    const sq = clamp(Math.round(3 + (sleep-7)*0.9 + noise(1)), 1, 5);
+    const sore = clamp(Math.round(1.5 + prevLoad*0.8 + noise(1)), 1, 5);
+    const stress = clamp(Math.round(2.6 + ([2,3,4].includes(w) ? 0.8 : 0) - (w === 6 || w === 0 ? 0.7 : 0) + noise(1.3)), 1, 5);
+    const cd = ((diffDays(addDays(t,-60), d) % 29) + 29) % 29 + 1;
+    const cyc = cd >= 24 ? -0.7 : cd <= 3 ? -0.5 : (cd >= 8 && cd <= 15 ? 0.35 : 0);
+    const energy = clamp(Math.round(3 + cyc + (sleep-7.2)*0.9 - prevLoad*0.35 - (stress-3)*0.3 + noise(0.6)), 1, 5);
+    const mood = clamp(Math.round(energy*0.6 + 1.3 + cyc*0.5 - (stress-3)*0.3 + noise(0.5)), 1, 5);
+    const symptoms = [];
+    if (cd <= 3 && rnd() < 0.7) symptoms.push('Cramps');
+    if ((cd >= 24 || cd <= 2) && rnd() < 0.6) symptoms.push('Bloated');
+    if (cd >= 23 && rnd() < 0.5) symptoms.push('Increased appetite');
+    if (energy <= 2 && rnd() < 0.7) symptoms.push('Tired');
+    if (sleep < 6.25 && rnd() < 0.5) symptoms.push('Brain fog');
+    const weight = rnd() < 0.85 ? Math.round((152 - i*-0.03 - (41-i)*0.04 + (cd >= 24 || cd <= 2 ? 1.6 : 0) + noise(1.4))*10)/10 : null;
+    entries[d] = { date:d, sleepHours:sleep, sleepQuality:sq, energy, mood, soreness:sore, stress, training, symptoms, weight, note:'' };
+    prevLoad = LOAD[training];
+  }
+  return entries;
+}
+
+/* ---------- import / export ---------- */
+function download(name, text, type){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function parseCSVLine(line){
+  const out = []; let cur = '', q = false;
+  for (let i=0; i<line.length; i++){
+    const c = line[i];
+    if (q){ if (c === '"' && line[i+1] === '"'){ cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
+    else if (c === '"') q = true; else if (c === ',') { out.push(cur); cur = ''; } else cur += c;
+  }
+  out.push(cur); return out.map(s => s.trim());
+}
+function importCSV(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const head = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z]/g, ''));
+  const find = (...names) => head.findIndex(h => names.includes(h));
+  const ix = { date:find('date','day'), sleepHours:find('sleephours','sleep','hoursslept','sleephrs'), sleepQuality:find('sleepquality'),
+    energy:find('energy'), mood:find('mood'), soreness:find('soreness','sore'), stress:find('stress'), training:find('training','workout','load'), note:find('note','notes'), period:find('period','periodstart','periodstarted'), symptoms:find('symptoms','symptom','tags'), weight:find('weight','weightlb','weightkg','bodyweight') };
+  if (ix.date < 0) throw new Error('No date column found.');
+  let count = 0;
+  for (const line of lines.slice(1)){
+    const c = parseCSVLine(line);
+    const date = (c[ix.date]||'').slice(0,10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    const num = (k, def) => { const v = parseFloat(c[ix[k]]); return ix[k] >= 0 && isFinite(v) ? v : def; };
+    let tr = (ix.training >= 0 ? c[ix.training] : '').toLowerCase();
+    tr = /lift|strength|weight|hard|3/.test(tr) ? 'lifting' : /cardio|cycl|bike|ride|run|spin|mod|light|2|1/.test(tr) ? 'cardio' : 'rest';
+    state.entries[date] = { date, sleepHours:clamp(num('sleepHours',7),0,14), sleepQuality:clamp(Math.round(num('sleepQuality',3)),1,5),
+      energy:clamp(Math.round(num('energy',3)),1,5), mood:clamp(Math.round(num('mood',3)),1,5), soreness:clamp(Math.round(num('soreness',2)),1,5),
+      stress:clamp(Math.round(num('stress',3)),1,5), training:tr, note: ix.note >= 0 ? (c[ix.note]||'') : '',
+      weight: ix.weight >= 0 && isFinite(parseFloat(c[ix.weight])) ? parseFloat(c[ix.weight]) : null,
+      symptoms: ix.symptoms >= 0 ? SYMPTOMS.filter(x => (c[ix.symptoms]||'').toLowerCase().includes(x.toLowerCase())) : [] };
+    if (ix.period >= 0 && /^(1|y|yes|true|x)$/i.test(c[ix.period]||'') && !state.periods.includes(date)) state.periods.push(date);
+    count++;
+  }
+  return count;
+}
+
+/* ---------- wiring ---------- */
+function renderAll(){
+  $('#todayLabel').textContent = `${DAYS[new Date().getDay()]}, ${fmtShort(todayStr())}`;
+  $('#sampleBanner').hidden = !state.sample;
+  $('#storageBanner').hidden = storageOk;
+  $('#s-sleep').value = state.settings.sleepTarget;
+  $('#s-unit').value = state.settings.unit || 'lb';
+  renderForecast(); renderPatterns(); renderWord(); renderWeight();
+}
+function loadSample(){
+  if (Object.keys(state.entries).length && !state.sample && !confirm('Replace your logged days with sample data?')) return;
+  state.entries = makeSample(); state.plans = {}; state.sample = true; save(); selected = null;
+  fillForm(todayStr()); renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => { $('#fab').style.display = es[0].isIntersecting ? 'none' : ''; }, { threshold:0.05 }).observe($('#checkin'));
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { renderForecast(); renderWeight(); }, 200); });
+  loadState(); buildSliders(); renderChips(); fillForm(todayStr()); renderAll();
+
+  $('#f-date').addEventListener('change', e => { if (e.target.value) fillForm(e.target.value); });
+  $('#form').addEventListener('submit', e => {
+    e.preventDefault();
+    const date = $('#f-date').value; if (!date) return;
+    const entry = { date, sleepHours: clamp(parseFloat($('#f-sleep').value) || 0, 0, 14), training: $('#f-training').value, symptoms: [...formSymptoms], weight: (v => isFinite(v) && v > 0 ? Math.round(v*10)/10 : null)(parseFloat($('#f-weight').value)), note: $('#f-note').value.trim() };
+    SLIDERS.forEach(s => entry[s.id] = parseInt($('#f-'+s.id).value, 10));
+    const existed = !!state.entries[date];
+    state.periods = state.periods.filter(p => p !== date);
+    if ($('#f-period').checked) state.periods.push(date);
+    state.entries[date] = entry; delete state.plans[date]; save();
+    fillForm(date); renderAll();
+    flash(existed ? 'Updated. Your outlook has been refreshed.' : 'Saved. Your outlook has been refreshed.');
+  });
+  $('#deleteBtn').addEventListener('click', () => {
+    const d = $('#f-date').value;
+    if (state.entries[d] && confirm(`Delete your check-in for ${fmtShort(d)}?`)){ delete state.entries[d]; save(); fillForm(d); renderAll(); }
+  });
+  $('#anotherWord').addEventListener('click', () => { wordIdx++; renderWord(); });
+  $('#loadSample').addEventListener('click', loadSample);
+  $('#sampleBtn2').addEventListener('click', loadSample);
+  $('#clearSample').addEventListener('click', () => { state.entries = {}; state.plans = {}; state.periods = []; state.sample = false; save(); selected = null; fillForm(todayStr()); renderAll(); });
+  $('#clearAll').addEventListener('click', () => {
+    if (!confirm('Delete every check-in and plan? Export first if you want a copy.')) return;
+    state.entries = {}; state.plans = {}; state.periods = []; state.sample = false; save(); selected = null; fillForm(todayStr()); renderAll();
+  });
+  $('#s-unit').addEventListener('change', e => { state.settings.unit = e.target.value; save(); renderAll(); });
+  $('#s-sleep').addEventListener('change', e => { const v = parseFloat(e.target.value); if (isFinite(v)) { state.settings.sleepTarget = clamp(v,5,10); save(); renderAll(); } });
+  $('#exportBtn').addEventListener('click', async () => {
+    const name = `daily-forecast-${todayStr()}.json`, text = JSON.stringify(state, null, 2);
+    try {
+      const file = new File([text], name, { type:'application/json' });
+      if (navigator.canShare && navigator.canShare({ files:[file] })) { await navigator.share({ files:[file], title:'Daily Forecast backup' }); return; }
+    } catch(err){ if (err && err.name === 'AbortError') return; }
+    download(name, text, 'application/json');
+  });
+  $('#importBtn').addEventListener('click', () => $('#importFile').click());
+  $('#importFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const text = await f.text();
+      if (/\.json$/i.test(f.name) || text.trim().startsWith('{')){
+        const s = JSON.parse(text);
+        if (!s.entries) throw new Error('That JSON file doesn\'t look like a Daily Forecast export.');
+        state = { entries:s.entries, plans:s.plans||{}, periods:s.periods||[], settings:{ sleepTarget:7.5, ...(s.settings||{}) }, sample:!!s.sample };
+        Object.values(state.entries).forEach(x => { x.training = normTraining(x.training); if (!x.symptoms) x.symptoms = []; });
+        alert(`Imported ${Object.keys(state.entries).length} days.`);
+      } else {
+        if (state.sample){ state.entries = {}; state.periods = []; state.sample = false; }
+        alert(`Imported ${importCSV(text)} days from CSV.`);
+      }
+      save(); selected = null; fillForm(todayStr()); renderAll();
+    } catch(err){ alert('Import failed: ' + err.message); }
+    e.target.value = '';
+  });
+});
+</script>
+</body>
+</html>

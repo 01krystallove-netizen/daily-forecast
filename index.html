@@ -141,8 +141,11 @@ header .sub{color:var(--muted);margin-top:4px;max-width:620px}
 form .row{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
 form .row.inline{flex-direction:row;gap:12px}
 form .row.inline > div{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+form .row.inline.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+form .row.inline.three label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+form .row.inline.three input{min-width:0}
 form label{font-weight:500;font-size:14px;display:flex;justify-content:space-between;gap:8px}
-input[type=date],input[type=time],input[type=number],select,textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;width:100%}
+input[type=date],input[type=time],input[type=number],input[type=text],select,textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;width:100%}
 textarea{resize:vertical;min-height:60px}
 .toast{font-size:13px;color:var(--strong)}
 .fieldset-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:4px 0 10px}
@@ -213,13 +216,29 @@ textarea{resize:vertical;min-height:60px}
   .wrap{padding:calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom))}
   h1{font-size:24px}
   header .sub{display:none}
-  input[type=date],input[type=time],input[type=number],select,textarea{font-size:16px;padding:10px 12px}
+  input[type=date],input[type=time],input[type=number],input[type=text],select,textarea{font-size:16px;padding:10px 12px}
   .scale button{padding:10px 0}
   .chip{padding:9px 14px}
   .btn{padding:11px 18px}
   .btn.sm{padding:7px 14px}
 }
 @media (max-width:420px){.today-label{display:none}}
+.liftnow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:8px}
+.liftnow b{font-family:Fraunces,Georgia,serif;font-size:40px;line-height:1}
+.cardhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.cardhead h2{margin:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface-2)}
+.seg button{border:0;background:transparent;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.subhead{font-family:Inter,system-ui,sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 4px}
+.voln{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--surface-2)}
+.voln.v-up{background:var(--steady-bg)}
+.liftgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:10px}
+@media (max-width:700px){.liftgrid{grid-template-columns:minmax(0,1fr)}}
+.liftcell{border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+@media (max-width:560px){#liftCard .acc{gap:12px 22px} #liftCard .acc div b{font-size:20px}}
+.lifthead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.lifthead select{width:auto;max-width:62%;min-width:0;padding:4px 8px;font-size:13px}
 footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
 </style>
 </head>
@@ -265,6 +284,7 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
     <section id="forecastArea" hidden>
       <div class="outlook" id="outlook"></div>
       <div class="card detail" id="detail"></div>
+      <section class="card" id="liftOutlook" style="margin-bottom:20px" hidden></section>
     </section>
 
     <section class="card">
@@ -307,6 +327,22 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
               <option value="cardio">Cardio Day</option>
               <option value="lifting">Lifting Day</option>
             </select>
+          </div>
+          <div class="fieldset-title" style="margin-top:6px">Extra activity <span style="text-transform:none;letter-spacing:0;font-weight:400">· anything beyond your normal day</span></div>
+          <div class="row">
+            <label for="f-act">Activity</label>
+            <select id="f-act">
+              <option value="">None</option>
+              <option value="cycling">Indoor Cycling</option>
+              <option value="walking">Walking</option>
+              <option value="hiking">Hiking</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="row inline three">
+            <div><label for="f-actmin">Duration</label><input type="text" id="f-actmin" inputmode="numeric" placeholder="min or h:mm" autocomplete="off"></div>
+            <div><label for="f-actdist">Distance <span class="muted small distUnit">mi</span></label><input type="number" id="f-actdist" inputmode="decimal" min="0" step="0.01" placeholder="—"></div>
+            <div><label for="f-acthr">Avg heart rate</label><input type="number" id="f-acthr" inputmode="numeric" min="30" max="230" step="1" placeholder="bpm"></div>
           </div>
           <div class="row">
             <label style="justify-content:flex-start;gap:8px;font-weight:400"><input type="checkbox" id="f-period"> My period started this day</label>
@@ -366,6 +402,32 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
         <div id="cycleSummary"></div>
       </section>
 
+      <section class="card" id="liftCard">
+        <div class="cardhead">
+          <h2>Lifting</h2>
+          <div class="seg" id="liftRange" role="group" aria-label="Time range">
+            <button type="button" data-r="3m">3M</button><button type="button" data-r="6m">6M</button><button type="button" data-r="1y">1Y</button><button type="button" data-r="all">All</button>
+          </div>
+        </div>
+        <p class="muted small" id="liftEmpty">Import your Strong export under Data &amp; Settings to see session time, weekly volume, and your main lifts here.</p>
+        <div id="liftBody" hidden>
+          <h3 class="subhead">Session time</h3>
+          <div class="acc" id="timeStats" style="margin:4px 0 10px"></div>
+          <div class="chartwrap" id="timeChart"></div>
+          <div class="legend"><span style="--c:var(--accent)">Session</span><span style="--c:var(--steady)">Over 45 min</span><span style="--c:var(--ink)">Average of last 8</span></div>
+
+          <h3 class="subhead">Weekly volume</h3>
+          <div class="acc" id="volStats" style="margin:4px 0 10px"></div>
+          <div class="chartwrap" id="volChart"></div>
+          <div class="legend"><span style="--c:var(--muted)">Week (Mon–Sun, working sets)</span><span style="--c:var(--accent)">8-week average (weeks trained)</span></div>
+          <p id="volNote" class="small voln"></p>
+
+          <h3 class="subhead">Top weight, main lifts</h3>
+          <p class="muted small">Heaviest working set each session. Pick the variant you want to follow for each lift.</p>
+          <div class="liftgrid" id="liftGrid"></div>
+        </div>
+      </section>
+
       <section class="card" id="weightCard">
         <h2>Weight trend</h2>
         <p class="muted small" id="weightEmpty" hidden>Your weight trend appears after two weigh-ins.</p>
@@ -393,6 +455,11 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
       <h3>Several entries in one day</h3>
       <p>Every save is its own entry, so a morning weigh-in and an evening mood check both stay on the record. For the day as a whole: ratings you give more than once are averaged; weight uses your first weigh-in of the day; hours slept uses the first value you log; training uses the hardest session you logged; the tags you pick under "Need a word?" and your notes are all kept.</p>
       <p>A day only gets a score once you've rated energy or mood. Until then (say, after a morning weigh-in and sleep rating) the forecast keeps showing for that day.</p>
+
+      <h3>Lifting (from Strong)</h3>
+      <p><strong>Volume</strong> is weight × reps across your working sets, so warm-ups don't count. The weekly check compares your last 4 full weeks with the 4 before and the 12 before, counting only weeks you trained so a break doesn't distort it, and flags anything more than 10% higher, so slow creep shows up too. After a break of 4+ weeks it also shows how far you've built from your first three weeks back.</p>
+      <p><strong>Session time</strong> is Strong's workout duration. Sessions under 5 minutes or over 3 hours are left out, since those are usually a timer left running.</p>
+      <p><strong>Strength outlook</strong> compares each session's best sets with your best on the same exercises over the previous six weeks (100% = matching it). The outlook starts from your recent level and adjusts for how your lifts have gone in the same cycle phase, plus how the day itself is forecast. Each estimate shows how many sessions it's based on, and is held close to your normal until there's more data. Imported lifting days also count toward training fatigue in the day forecast, scaled by how big the session was.</p>
 
       <h3>Your cycle</h3>
       <p>Cycle length is the average gap between your last six period starts (gaps between 20 and 45 days; anything outside that is treated as a missed log). With fewer than two starts it assumes 28 days. Phases are estimated from that length: period (days 1–5), follicular, around ovulation (about 14 days before the next period), luteal, and premenstrual (the last five days). Estimated days and future cycles are shown lighter on the Trends chart.</p>
@@ -423,7 +490,8 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
           <button class="btn" id="sampleBtn2">Load sample data</button>
         </div>
         <p class="muted small" style="margin-top:14px"><strong>Importing</strong> (JSON or CSV) adds entries to what's here and skips any that exactly match an entry you already have. Nothing you've logged is overwritten. Backups from the older 1–10 version are converted to 1–5 automatically.</p>
-        <p class="muted small" style="margin-top:8px">CSV columns (any order): <code>date</code> (YYYY-MM-DD), <code>time</code> (HH:MM, optional), <code>sleep_hours</code>, <code>sleep_quality</code>, <code>energy</code>, <code>mood</code>, <code>motivation</code>, <code>stress</code>, <code>appetite</code> (1–5 each), <code>training</code> (rest / cardio / lifting), <code>weight</code>, <code>tags</code> (any "Need a word?" tag, e.g. "Bloated; Fatigue"), <code>period</code> (yes on the day a period started), <code>note</code>. Blank cells are left blank. Everything stays in this browser; nothing is sent anywhere.</p>
+        <p class="muted small" style="margin-top:8px"><strong>Strong:</strong> import the CSV from Strong's export as is. Re-import the full export any time; workouts you already have are updated, not duplicated. Warm-up sets are left out of volume and top weights.</p>
+        <p class="muted small" style="margin-top:8px">Check-in CSV columns (any order): <code>date</code> (YYYY-MM-DD), <code>time</code> (HH:MM, optional), <code>sleep_hours</code>, <code>sleep_quality</code>, <code>energy</code>, <code>mood</code>, <code>motivation</code>, <code>stress</code>, <code>appetite</code> (1–5 each), <code>training</code> (rest / cardio / lifting), <code>weight</code>, <code>tags</code> (any "Need a word?" tag, e.g. "Bloated; Fatigue"), <code>period</code> (yes on the day a period started), <code>note</code>, <code>activity</code> (indoor cycling / walking / hiking / other), <code>duration</code> (minutes), <code>distance</code>, <code>avg_heart_rate</code>. Blank cells are left blank. Everything stays in this browser; nothing is sent anywhere.</p>
       </section>
     </div>
   </main>
@@ -471,11 +539,13 @@ const TAGS = ['Fatigue','Brain fog','Increased appetite','Depressed','Self-criti
 const POSITIVE_TAGS = ['Happy','Calm','Proud of myself'];
 const TAG_RENAME = { 'Tired':'Fatigue', 'Drained':'Fatigue', 'Feeling behind':'Self-critical' };
 const RATINGS = ['energy','mood','motivation','sleepQuality','stress','appetite'];
+const ACTIVITIES = { cycling:'Indoor cycling', walking:'Walking', hiking:'Hiking', other:'Other activity' };
+const hasActivity = l => !!(l.actType || l.actMin != null || l.actDist != null || l.actHR != null);
 // Ratings used to be 1–10. Data saved with scale:10 is converted on the way in: 1–2→1, 3–4→2, 5–6→3, 7–8→4, 9–10→5.
 const SCALED_FROM_10 = ['energy','mood','motivation','sleepQuality','stress'];
 const from10 = v => { const n = parseFloat(v); return isFinite(n) ? clamp(Math.ceil(clamp(Math.round(n),1,10)/2), 1, 5) : null; };
 let storageOk = true;
-let state = { version:2, scale:5, logs:[], plans:{}, periods:[], settings:{ sleepTarget:7.5, unit:'lb' }, sample:false };
+let state = { version:2, scale:5, logs:[], workouts:[], plans:{}, periods:[], settings:{ sleepTarget:7.5, unit:'lb', liftSlots:{}, liftRange:'6m' }, sample:false };
 
 // Clean anything coming from storage or an imported file so only expected shapes get in.
 function cleanLog(l){
@@ -494,13 +564,18 @@ function cleanLog(l){
       const named = raw.filter(t => typeof t === 'string').map(t => TAG_RENAME[t] || t);
       return TAGS.filter(t => named.includes(t));
     })(),
-    note: typeof l.note === 'string' ? l.note.slice(0, 4000) : ''
+    note: typeof l.note === 'string' ? l.note.slice(0, 4000) : '',
+    actType: ACTIVITIES[l.actType] ? l.actType : null,
+    actMin: (m => m == null ? null : Math.round(m))(num(l.actMin, 1, 1440)),
+    actDist: (d => d == null || d <= 0 ? null : Math.round(d*100)/100)(num(l.actDist, 0, 500)),
+    actDistUnit: l.actDistUnit === 'km' ? 'km' : 'mi',
+    actHR: (h => h == null ? null : Math.round(h))(num(l.actHR, 30, 230))
   };
   RATINGS.forEach(k => out[k] = rate(l[k]));
   return out;
 }
 function cleanState(s){
-  const out = { version:2, scale:5, logs:[], plans:{}, periods:[], settings:{ sleepTarget:7.5, unit:'lb' }, sample: !!s.sample };
+  const out = { version:2, scale:5, logs:[], workouts:[], plans:{}, periods:[], settings:{ sleepTarget:7.5, unit:'lb', liftSlots:{}, liftRange:'6m' }, sample: !!s.sample };
   let logs = Array.isArray(s.logs) ? s.logs : null;
   if (!logs && s.entries && typeof s.entries === 'object'){
     // v1 format: one entry per date. Each becomes a single entry with no time.
@@ -519,7 +594,20 @@ function cleanState(s){
   const st = s.settings || {};
   const t = parseFloat(st.sleepTarget); if (isFinite(t)) out.settings.sleepTarget = clamp(t, 5, 10);
   if (st.unit === 'kg' || st.unit === 'lb') out.settings.unit = st.unit;
+  if (['3m','6m','1y','all'].includes(st.liftRange)) out.settings.liftRange = st.liftRange;
+  if (st.liftSlots && typeof st.liftSlots === 'object') LIFT_SLOTS.forEach(k => { const v = st.liftSlots[k.id]; if (typeof v === 'string') out.settings.liftSlots[k.id] = v.slice(0,120); });
+  out.workouts = (Array.isArray(s.workouts) ? s.workouts : []).map(cleanWorkout).filter(Boolean);
   return out;
+}
+function cleanWorkout(w){
+  if (!w || typeof w !== 'object' || !isDate(w.date)) return null;
+  const num = (v, lo, hi) => { const n = parseFloat(v); return isFinite(n) ? clamp(n, lo, hi) : null; };
+  const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+  const ex = (Array.isArray(w.ex) ? w.ex : []).slice(0, 60).filter(e => e && typeof e.n === 'string').map(e => ({
+    n: str(e.n, 120), sets: Math.round(num(e.sets,0,200) || 0), reps: Math.round(num(e.reps,0,5000) || 0),
+    volKg: num(e.volKg,0,1e6) || 0, topKg: num(e.topKg,0,1000) || 0, topReps: Math.round(num(e.topReps,0,500) || 0), e1: num(e.e1,0,2000) || 0 }));
+  return { key: str(w.key, 40) || w.date, date: w.date, time: typeof w.time === 'string' && /^\d{2}:\d{2}$/.test(w.time) ? w.time : null,
+    name: str(w.name, 120), durMin: num(w.durMin, 0, 1000), ex };
 }
 function loadState(){
   try {
@@ -553,10 +641,12 @@ function derive(){
     d.training = tr.length ? tr.reduce((a,b) => (LOAD[b] > LOAD[a] ? b : a)) : null;
     d.tags = [...new Set(L.flatMap(l => l.tags || []))];
     d.notes = L.filter(l => l.note).map(l => ({ time:l.time, note:l.note }));
+    d.activities = L.filter(hasActivity);
     d.scored = d.energy != null || d.mood != null;   // a day is scored once you've said how you feel
   });
   SCORED = {};
   Object.values(DAY).forEach(d => { if (d.scored) SCORED[d.date] = d; });
+  deriveLifting();
 }
 
 /* ---------- scoring ---------- */
@@ -613,7 +703,10 @@ function buildModel(cutoff){
   const target = state.settings.sleepTarget;
 
   const loadOn = d => {
-    if (d <= cutoff) { const e = DAY[d]; return e && e.training ? (LOAD[e.training]||0) : 0; }
+    if (d <= cutoff) {
+      const ll = liftLoad(d); if (ll != null) return ll;   // a Strong session counts by how big it was
+      const e = DAY[d]; return e && e.training ? (LOAD[e.training]||0) : 0;
+    }
     return 0;   // the forecast uses logged history only; nothing is assumed for days not yet logged
   };
   const fatigue = d => { let f = 0; for (let g=1; g<=4; g++) f += loadOn(addDays(d,-g)) * Math.pow(0.55, g-1); return f; };
@@ -858,6 +951,7 @@ function resetForm(date){
   $('#f-date').value = date || todayStr();
   $('#f-time').value = nowTime();
   $('#f-sleep').value = ''; $('#f-weight').value = ''; $('#f-training').value = ''; $('#f-note').value = '';
+  $('#f-act').value = ''; $('#f-actmin').value = ''; $('#f-actdist').value = ''; $('#f-acthr').value = '';
   formRatings = {}; formTags = [];
   renderRatings(); renderSymptomChips();
   $('#f-period').checked = state.periods.includes($('#f-date').value);
@@ -873,6 +967,8 @@ function loadIntoForm(id){
   $('#f-weight').value = isNum(l.weight) ? l.weight : '';
   $('#f-training').value = l.training || '';
   $('#f-note').value = l.note || '';
+  $('#f-act').value = l.actType || ''; $('#f-actmin').value = l.actMin != null ? l.actMin : '';
+  $('#f-actdist').value = l.actDist != null ? l.actDist : ''; $('#f-acthr').value = l.actHR != null ? l.actHR : '';
   formRatings = {}; RATINGS.forEach(k => { if (l[k] != null) formRatings[k] = l[k]; });
   formTags = [...(l.tags||[])];
   renderRatings(); renderSymptomChips();
@@ -891,12 +987,31 @@ function readForm(){
     sleepHours: sleepRaw === '' ? null : clamp(parseFloat(sleepRaw) || 0, 0, 14),
     weight: (w => w == null ? null : Math.round(w*10)/10)(n($('#f-weight').value, 20, 1000)),
     training: $('#f-training').value || null,
-    tags: [...formTags], note: $('#f-note').value.trim()
+    tags: [...formTags], note: $('#f-note').value.trim(),
+    actType: $('#f-act').value || null, actMin: parseDuration($('#f-actmin').value),
+    actDist: n($('#f-actdist').value, 0, 500), actDistUnit: distUnit(), actHR: n($('#f-acthr').value, 30, 230)
   };
   RATINGS.forEach(k => l[k] = formRatings[k] ?? null);
   return l;
 }
-const isEmptyLog = l => l.sleepHours == null && l.weight == null && !l.training && !l.tags.length && !l.note && RATINGS.every(k => l[k] == null);
+const isEmptyLog = l => l.sleepHours == null && l.weight == null && !l.training && !l.tags.length && !l.note && !hasActivity(l) && RATINGS.every(k => l[k] == null);
+const distUnit = () => state.settings.unit === 'kg' ? 'km' : 'mi';
+// "45", "45 min", "1:15", "1h 15m", "1.5h" -> minutes
+function parseDuration(v){
+  v = String(v || '').trim().toLowerCase(); if (!v) return null;
+  let m;
+  if ((m = v.match(/^(\d+):(\d{1,2})$/))) return +m[1]*60 + +m[2];
+  if ((m = v.match(/^(?:(\d+(?:\.\d+)?)\s*h(?:ours?|rs?)?)?\s*(?:(\d+)\s*m(?:in(?:utes?|s)?)?)?$/)) && (m[1] || m[2])) return Math.round((m[1] ? parseFloat(m[1])*60 : 0) + (m[2] ? +m[2] : 0));
+  const x = parseFloat(v); return isFinite(x) && x > 0 ? Math.round(x) : null;
+}
+const fmtMin = m => m >= 60 ? `${Math.floor(m/60)} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`;
+function activityText(l){
+  const bits = [l.actType ? ACTIVITIES[l.actType] : 'Activity'];
+  if (l.actMin != null) bits.push(fmtMin(l.actMin));
+  if (l.actDist != null) bits.push(`${l.actDist} ${l.actDistUnit}`);
+  if (l.actHR != null) bits.push(`${l.actHR} bpm avg`);
+  return bits.join(' · ');
+}
 function flash(msg, bad){ const t = $('#toast'); t.textContent = msg; t.style.color = bad ? 'var(--gentle)' : ''; clearTimeout(flash.t); flash.t = setTimeout(() => t.textContent = '', 4000); }
 
 function logSummary(l){
@@ -905,7 +1020,7 @@ function logSummary(l){
   if (isNum(l.sleepHours)) bits.push(`Slept ${l.sleepHours} h`);
   const r = SCALES.filter(s => l[s.id] != null).map(s => `${s.label} ${l[s.id]}`);
   const tr = l.training ? { rest:'Rest day', cardio:'Cardio day', lifting:'Lifting day' }[l.training] : null;
-  return { line1: bits.join(' · '), line2: [...r, ...(tr ? [tr] : [])].join(' · ') };
+  return { line1: bits.join(' · '), line2: [...r, ...(tr ? [tr] : [])].join(' · '), line3: hasActivity(l) ? activityText(l) : '' };
 }
 function renderEntries(){
   const date = $('#f-date').value || todayStr();
@@ -926,6 +1041,7 @@ function renderEntries(){
       <div class="ebody">
         ${sm.line1 ? `<span>${esc(sm.line1)}</span>` : ''}
         ${sm.line2 ? `<span>${esc(sm.line2)}</span>` : ''}
+        ${sm.line3 ? `<span>${esc(sm.line3)}</span>` : ''}
         ${l.tags.length ? `<span>${l.tags.map(x => `<span class="badge">${esc(x)}</span>`).join('')}</span>` : ''}
         ${l.note ? `<span class="enote">“${esc(l.note)}”</span>` : ''}
       </div>
@@ -979,6 +1095,7 @@ function renderForecast(){
   const loggedBits = dd ? `
       ${dd.tags.length ? `<div class="chips" style="margin:0">${dd.tags.map(y => `<span class="chip" style="cursor:default">${esc(y)}</span>`).join('')}</div>` : ''}
       ${isNum(dd.weight) ? `<p class="small muted">Weigh-in: ${dd.weight} ${state.settings.unit}</p>` : ''}
+      ${dd.activities.length ? dd.activities.map(a => `<p class="small muted">${esc(activityText(a))}</p>`).join('') : ''}
       ${dd.notes.length ? `<div class="daynotes">${dd.notes.map(n => `<p>${n.time ? `<span class="t">${esc(fmtTime(n.time))}</span>` : ''}“${esc(n.note)}”</p>`).join('')}</div>` : ''}` : '';
 
   $('#detail').className = `card detail z-${x.zone}`;
@@ -1009,6 +1126,7 @@ function renderForecast(){
       </div>
       <div class="quote">${word}</div>
     </div>`;
+  renderLiftOutlook(x, model);
 }
 
 /* ---------- trends: score chart + cycle strip ---------- */
@@ -1129,6 +1247,315 @@ function renderCycle(){
     </div>`;
 }
 
+/* ---------- lifting (Strong import) ---------- */
+// Workouts are stored as per-exercise summaries of working sets (warm-ups excluded), weights in kg.
+const KG_LB = 2.20462;
+const LIFT_SLOTS = [
+  { id:'squat',    label:'Squat',           match:/squat/i,                         prefer:'Squat (Barbell)' },
+  { id:'deadlift', label:'Deadlift',        match:/deadlift|\brdl\b/i,              prefer:'Deadlift (Barbell)' },
+  { id:'bench',    label:'Bench press',     match:/bench press/i,                   prefer:'Bench Press (Barbell)' },
+  { id:'ohp',      label:'Overhead press',  match:/overhead press|shoulder press/i, prefer:'Overhead Press (Barbell)' }
+];
+const RANGES = { '3m':91, '6m':182, '1y':365, 'all':100000 };
+const e1rm = (kg, reps) => kg * (1 + Math.min(reps, 12)/30);   // Epley, capped so high-rep sets don't inflate it
+const toUnit = kg => state.settings.unit === 'kg' ? kg : kg * KG_LB;
+const fmtW = kg => state.settings.unit === 'kg' ? `${(Math.round(kg*2)/2).toFixed(1).replace(/\.0$/,'')}` : `${Math.round(kg*KG_LB)}`;
+const fmtVol = kg => { const v = toUnit(kg); return v >= 10000 ? `${(v/1000).toFixed(1)}k` : `${Math.round(v).toLocaleString()}`; };
+const weekStart = d => { const x = parse(d); const dow = (x.getDay()+6)%7; x.setDate(x.getDate()-dow); return toStr(x); };  // Monday
+
+function importStrong(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const delim = (lines[0].match(/;/g)||[]).length > (lines[0].match(/,/g)||[]).length ? ';' : ',';
+  const head = parseCSVLine(lines[0], delim).map(h => h.trim());
+  const col = re => head.findIndex(h => re.test(h));
+  const ix = { num:col(/^workout #$/i), date:col(/^date$/i), name:col(/^workout name$/i), dur:col(/^duration/i), ex:col(/^exercise name$/i),
+               order:col(/^set order$/i), weight:col(/^weight/i), reps:col(/^reps$/i) };
+  if (ix.date < 0 || ix.ex < 0 || ix.order < 0 || ix.weight < 0 || ix.reps < 0) throw new Error('This doesn\'t look like a Strong export.');
+  const inLb = /lb/i.test(head[ix.weight]);
+  const durText = head[ix.dur] || '';
+  const byKey = new Map();
+  for (const line of lines.slice(1)){
+    const c = parseCSVLine(line, delim);
+    const stamp = (c[ix.date] || '').trim(), date = stamp.slice(0,10);
+    if (!isDate(date)) continue;
+    const key = `${stamp.slice(0,19)}#${ix.num >= 0 ? c[ix.num] : ''}`.slice(0,40);
+    if (!byKey.has(key)){
+      let dur = parseFloat(c[ix.dur]); if (/min/i.test(durText)) dur *= 60;
+      const durMin = isFinite(dur) && dur >= 5*60 && dur <= 180*60 ? Math.round(dur/6)/10 : null;   // timers left running are ignored
+      const tm = stamp.match(/[ T](\d{2}):(\d{2})/);
+      byKey.set(key, { key, date, time: tm ? `${tm[1]}:${tm[2]}` : null, name: (c[ix.name]||'').slice(0,120), durMin, exMap:new Map() });
+    }
+    const order = (c[ix.order] || '').trim();
+    if (!/^(\d+|F|D)$/i.test(order)) continue;   // skip warm-ups (W), rest timers and notes
+    const reps = parseInt(c[ix.reps], 10); let w = parseFloat(c[ix.weight]);
+    if (!isFinite(reps) || reps <= 0) continue;
+    if (!isFinite(w)) w = 0; if (inLb) w /= KG_LB;
+    const name = (c[ix.ex] || '').trim().slice(0,120); if (!name) continue;
+    const ex = byKey.get(key).exMap;
+    const e = ex.get(name) || { n:name, sets:0, reps:0, volKg:0, topKg:0, topReps:0, e1:0 };
+    e.sets++; e.reps += reps; e.volKg += w*reps;
+    if (w > e.topKg || (w === e.topKg && reps > e.topReps)){ e.topKg = w; e.topReps = reps; }
+    e.e1 = Math.max(e.e1, w > 0 ? e1rm(w, reps) : 0);
+    ex.set(name, e);
+  }
+  const existing = new Map(state.workouts.map(w => [w.key, w]));
+  let added = 0, updated = 0;
+  byKey.forEach(w => {
+    const clean = cleanWorkout({ ...w, ex:[...w.exMap.values()].map(e => ({ ...e, volKg: Math.round(e.volKg*10)/10, topKg: Math.round(e.topKg*100)/100, e1: Math.round(e.e1*10)/10 })) });
+    if (!clean || !clean.ex.length) return;
+    if (existing.has(clean.key)) updated++; else added++;
+    existing.set(clean.key, clean);
+  });
+  state.workouts = [...existing.values()];
+  return { added, updated, total: state.workouts.length };
+}
+
+// LIFT.sessions: workouts in date order with total volume and a strength index
+// (best set vs. your best on that same exercise over the previous six weeks, averaged; 100 = matching it).
+let LIFT = { sessions:[], byDate:{} };
+function deriveLifting(){
+  const ws = [...(state.workouts||[])].sort((a,b) => a.key.localeCompare(b.key));
+  const hist = {};   // exercise -> [[date, e1]]
+  const sessions = ws.map(w => {
+    const ratios = [];
+    w.ex.forEach(e => {
+      if (!(e.e1 > 0)) return;
+      const h = hist[e.n] || (hist[e.n] = []);
+      let best = 0; for (let i = h.length-1; i >= 0; i--){ const gap = diffDays(h[i][0], w.date); if (gap > 42) break; if (gap > 0) best = Math.max(best, h[i][1]); }
+      if (best > 0) ratios.push(e.e1/best);
+      h.push([w.date, e.e1]);
+    });
+    return { ...w, vol: w.ex.reduce((a,e) => a + e.volKg, 0), sets: w.ex.reduce((a,e) => a + e.sets, 0), idx: ratios.length ? 100*mean(ratios) : null };
+  });
+  const byDate = {};
+  sessions.forEach(s => (byDate[s.date] ||= []).push(s));
+  LIFT = { sessions, byDate };
+}
+const trainingOn = d => LIFT.byDate[d] ? 'lifting' : (DAY[d] && DAY[d].training) || null;
+function normalVolume(d){   // median session volume over the 12 weeks before d
+  const v = LIFT.sessions.filter(s => s.date < d && diffDays(s.date, d) <= 84).map(s => s.vol).sort((a,b) => a-b);
+  return v.length ? v[Math.floor(v.length/2)] : null;
+}
+function liftLoad(d){
+  const ss = LIFT.byDate[d]; if (!ss) return null;
+  const vol = ss.reduce((a,s) => a + s.vol, 0), norm = normalVolume(d);
+  return LOAD.lifting * (norm ? clamp(vol/norm, 0.5, 1.6) : 1);
+}
+
+/* time + volume checks */
+function timeCheck(){
+  const t = todayStr();
+  const recent = LIFT.sessions.filter(s => diffDays(s.date, t) < 28 && s.durMin != null);
+  if (!recent.length) return null;
+  const over = recent.filter(s => s.durMin > 45).length;
+  return { avg: mean(recent.map(s => s.durMin)), over, n: recent.length, longest: Math.max(...recent.map(s => s.durMin)) };
+}
+function weeklyVolumes(){
+  const m = {}; LIFT.sessions.forEach(s => { const w = weekStart(s.date); m[w] = m[w] || { vol:0, n:0, sets:0 }; m[w].vol += s.vol; m[w].n++; m[w].sets += s.sets; });
+  return m;
+}
+function volumeCheck(){
+  // Compares weeks you actually trained, so a break doesn't read as "zero volume" and make a comeback look like creep.
+  const wk = weeklyVolumes(), thisWeek = weekStart(todayStr());
+  const all = Array.from({ length:16 }, (_, i) => addDays(thisWeek, -7*(i+1)));   // complete weeks, newest first
+  const trained = ws => ws.filter(w => wk[w] && wk[w].n > 0).map(w => wk[w].vol);
+  const last4 = trained(all.slice(0,4)), prev4 = trained(all.slice(4,8)), prev12 = trained(all.slice(4,16));
+  if (!last4.length) return null;
+  const a = mean(last4);
+  const pct = (xs) => xs.length >= 2 ? Math.round(100*(a - mean(xs))/mean(xs)) : null;
+  const vs4 = pct(prev4), vs12 = pct(prev12);
+  const sessions4 = all.slice(0,4).reduce((n,w) => n + (wk[w] ? wk[w].n : 0), 0)/4;
+  // since your last break (3+ empty weeks): first 3 training weeks back vs. now
+  let since = null;
+  const weeks = Object.keys(wk).sort(); let restart = null;
+  for (let i = 1; i < weeks.length; i++) if (diffDays(weeks[i-1], weeks[i]) >= 28) restart = weeks[i];
+  if (restart && restart < all[5]){ const firstBack = weeks.filter(w => w >= restart).slice(0,3).map(w => wk[w].vol); if (firstBack.length === 3) since = { from: restart, pct: Math.round(100*(a - mean(firstBack))/mean(firstBack)) }; }
+  const creeping = (vs4 != null && vs4 > 10) || (vs12 != null && vs12 > 10);
+  const status = creeping ? 'up' : ((vs4 != null && vs4 < -10) ? 'down' : 'steady');
+  return { avg:a, vs4, vs12, sessions4, status, since };
+}
+function volumeSentence(v){
+  if (!v) return 'Not enough recent weeks to judge your volume yet.';
+  const sign = x => x == null ? '—' : `${x > 0 ? '+' : ''}${x}%`;
+  const back = v.since ? ` Since you came back on ${fmtShort(v.since.from)}, it's ${sign(v.since.pct)} on your first three weeks.` : '';
+  if (v.status === 'up') return `Weekly volume is climbing (${sign(v.vs4)} vs. the 4 weeks before, ${sign(v.vs12)} vs. the 12 before).${back} That's the creep pattern you've flagged: hold here, or trim a set from your accessories.`;
+  if (v.status === 'down') return `Weekly volume is down (${sign(v.vs4)} vs. the 4 weeks before). A lighter stretch, which is fine if it's on purpose.${back}`;
+  return `Weekly volume is holding steady (${sign(v.vs4)} vs. the 4 weeks before, ${sign(v.vs12)} vs. the 12 before).${back}`;
+}
+
+/* strength outlook: your recent level, adjusted for cycle phase and how the day is shaping up */
+function liftOutlookModel(dayModel){
+  const S = LIFT.sessions.filter(s => s.idx != null);
+  if (S.length < 6) return null;
+  const recent = S.slice(-24), base = mean(recent.map(s => s.idx));
+  const sd = Math.sqrt(mean(recent.map(s => (s.idx-base)**2)));
+  const psum = {}, pcnt = {};
+  S.forEach(s => { const c = cycleInfo(s.date); if (!c) return; psum[c.phase] = (psum[c.phase]||0) + (s.idx - base); pcnt[c.phase] = (pcnt[c.phase]||0) + 1; });
+  const phaseEff = ph => (psum[ph]||0)/((pcnt[ph]||0)+3);
+  const pairs = S.filter(s => SCORED[s.date]).map(s => [readiness(SCORED[s.date]), s.idx]);
+  let b = 0; if (pairs.length >= 8){ const sl = slope(pairs.map(p => p[0]), pairs.map(p => p[1])); if (isFinite(sl)) b = clamp(sl * pairs.length/(pairs.length+10), -0.4, 0.4); }
+  return {
+    base, band: Math.round(clamp(sd, 3, 10)), pcnt, phaseEff, pairs: pairs.length, b,
+    predict(date, dayScore){
+      const c = cycleInfo(date), parts = [];
+      if (c) parts.push({ key:'cycle', v: phaseEff(c.phase), phase:c.phase, n: pcnt[c.phase]||0, raw: pcnt[c.phase] ? psum[c.phase]/pcnt[c.phase] : 0 });
+      if (dayModel && dayScore != null && b) parts.push({ key:'day', v: b*(dayScore - dayModel.base) });
+      return { v: base + parts.reduce((a,p) => a + p.v, 0), parts, phase: c && c.phase };
+    }
+  };
+}
+
+function renderLiftOutlook(x, model){
+  const card = $('#liftOutlook');
+  if (!LIFT.sessions.length){ card.hidden = true; return; }
+  card.hidden = false;
+  const done = LIFT.byDate[x.date];
+  const tc = timeCheck(), vc = volumeCheck();
+  const guard = `<div class="guide" style="margin-top:14px">
+      <div><h3>Time</h3><p>${tc ? `Aim for under 45 min. Last 4 weeks: ${Math.round(tc.avg)} min average, ${tc.over} of ${tc.n} ${tc.n === 1 ? 'session' : 'sessions'} over.` : 'Aim for under 45 min.'}</p></div>
+      <div><h3>Volume</h3><p>${esc(volumeSentence(vc))}</p></div>
+      <div><h3>Where this comes from</h3><p>Your Strong history: best sets compared with your own recent bests, by cycle phase and day.</p></div>
+    </div>`;
+  const lm = liftOutlookModel(model);
+  const head = `<div class="tag">${DAYS[parse(x.date).getDay()]}, ${fmtShort(x.date)}${(c => c ? ` · ${PHASE_NAMES[c.phase]} phase` : '')(cycleInfo(x.date))}</div>`;
+  if (done){
+    const s = done[done.length-1];
+    const idxs = done.map(d => d.idx).filter(v => v != null);
+    card.innerHTML = `<h2>Lifting</h2>${head}
+      <div class="liftnow"><b>${idxs.length ? Math.round(mean(idxs)) + '%' : '—'}</b><span class="small muted">of your recent best on ${esc(s.name || 'this session')}</span></div>
+      <p class="small">${done.map(d => `${d.durMin != null ? Math.round(d.durMin) + ' min' : 'time not tracked'} · ${fmtVol(d.vol)} ${state.settings.unit} volume · ${d.sets} working sets`).join('<br>')}</p>${guard}`;
+    return;
+  }
+  if (!lm){ card.innerHTML = `<h2>Lifting outlook</h2><p class="muted small">Your strength outlook appears after a few more imported sessions.</p>${guard}`; return; }
+  const p = lm.predict(x.date, x.score);
+  const v = Math.round(p.v);
+  const advice = v <= 96 ? 'Hold your working weights and skip PR attempts. Dropping the last set of an accessory is a fine trade today.'
+               : v >= 103 ? 'A good day to push a top set, if your plan calls for one.'
+               : 'Run the plan as written.';
+  const why = p.parts.filter(q => Math.abs(q.v) >= 0.5).map(q => {
+    if (q.key === 'cycle') return `<li><span class="arrow ${q.v>0?'up':'down'}">${q.v>0?'↑':'↓'}</span><span>${PHASE_NAMES[q.phase]} days have run ${Math.abs(Math.round(q.raw))}% ${q.raw >= 0 ? 'above' : 'below'} your norm (${q.n} ${q.n === 1 ? 'session' : 'sessions'} so far)</span></li>`;
+    return `<li><span class="arrow ${q.v>0?'up':'down'}">${q.v>0?'↑':'↓'}</span><span>This day ${q.v > 0 ? 'looks better' : 'looks tougher'} than your usual, and your lifts tend to follow how you feel</span></li>`;
+  });
+  card.innerHTML = `<h2>Lifting outlook</h2>${head}
+    <div class="liftnow"><b>~${v}%</b><span class="small muted">of your recent best if you lift${x.date === todayStr() ? ' today' : ''}. Likely ${v-lm.band}–${v+lm.band}%.</span></div>
+    <p class="small" style="margin-top:6px">${advice}</p>
+    <ul class="why" style="margin-top:10px">${why.length ? why.join('') : '<li class="muted">Nothing unusual. Expect about your normal.</li>'}</ul>${guard}`;
+}
+
+/* trends charts */
+function liftCandidates(slot){
+  const counts = {}; const last = {}; const recentTop = {}; const t = todayStr();
+  LIFT.sessions.forEach(s => s.ex.forEach(e => { if (slot.match.test(e.n) && e.topKg > 0){ counts[e.n] = (counts[e.n]||0) + 1; last[e.n] = s.date;
+    if (diffDays(s.date, t) <= 56) recentTop[e.n] = Math.max(recentTop[e.n]||0, e.topKg); } }));
+  // your main variant: the heaviest one you've done in the last 8 weeks; otherwise the most recent
+  return Object.keys(counts).filter(n => counts[n] >= 3).sort((a,b) => ((recentTop[b]||0) - (recentTop[a]||0)) || last[b].localeCompare(last[a]));
+}
+function slotExercise(slot){
+  const cands = liftCandidates(slot), chosen = state.settings.liftSlots[slot.id];
+  if (chosen && cands.includes(chosen)) return { name: chosen, cands };
+  return { name: cands[0] || null, cands };   // default: your heaviest recent variant
+}
+function axisDates(start, end, W, L, Rr, H, X){
+  const span = diffDays(start, end); let out = '';
+  const ticks = W < 600 ? 3 : 6;
+  for (let i=0; i<=ticks; i++){ const d = addDays(start, Math.round(span*i/ticks)); const lab = span > 400 ? `${MONTHS[parse(d).getMonth()]} ’${String(parse(d).getFullYear()).slice(2)}` : fmtShort(d);
+    out += `<text x="${X(d)}" y="${H-8}" text-anchor="${i===0?'start':i===ticks?'end':'middle'}" font-size="11" fill="var(--muted)">${lab}</text>`; }
+  return out;
+}
+function gridY(ticks, L, W, Rr, Y, fmt){ return ticks.map(v => `<line x1="${L}" x2="${W-Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmt(v)}</text>`).join(''); }
+function niceMax(v){ const p = Math.pow(10, Math.floor(Math.log10(v||1))); return Math.ceil(v/p*2)/2*p; }
+
+function renderLifting(){
+  const has = LIFT.sessions.length > 0;
+  $('#liftEmpty').hidden = has; $('#liftBody').hidden = !has;
+  $$('#liftRange button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.r === state.settings.liftRange)));
+  if (!has) return;
+  const t = todayStr(), days = RANGES[state.settings.liftRange] || 182;
+  const first = LIFT.sessions[0].date;
+  const start = diffDays(first, t) < days ? first : addDays(t, -days);
+  const inRange = LIFT.sessions.filter(s => s.date >= start);
+  const u = state.settings.unit;
+
+  // time
+  const tc = timeCheck(), timed = inRange.filter(s => s.durMin != null);
+  $('#timeStats').innerHTML = tc ? `
+    <div><b>${Math.round(tc.avg)} min</b><span class="muted small">average, last 4 weeks</span></div>
+    <div><b>${tc.over} of ${tc.n}</b><span class="muted small">sessions over 45 min</span></div>
+    <div><b>${Math.round(tc.longest)} min</b><span class="muted small">longest, last 4 weeks</span></div>` : `<p class="muted small">No timed sessions in the last 4 weeks.</p>`;
+  {
+    const W = clamp($('#timeChart').clientWidth || 900, 320, 900), H = 190, L = 40, Rr = 12, T = 12, B = 26;
+    const maxM = Math.max(75, niceMax(Math.max(...timed.map(s => s.durMin), 45) + 5));
+    const X = d => L + (diffDays(start, d)/Math.max(1, diffDays(start, t)))*(W-L-Rr), Y = v => T + (1 - v/maxM)*(H-T-B);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Session length over time with a 45 minute target">` + gridY([0, 30, 60, ...(maxM > 90 ? [90] : []), ...(maxM > 120 ? [120] : [])].filter(v => v <= maxM), L, W, Rr, Y, v => v);
+    svg += `<line x1="${L}" x2="${W-Rr}" y1="${Y(45)}" y2="${Y(45)}" stroke="var(--steady)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W-Rr}" y="${Y(45)-5}" text-anchor="end" font-size="11" fill="var(--steady)">45 min</text>`;
+    timed.forEach(s => svg += `<circle cx="${X(s.date)}" cy="${Y(Math.min(s.durMin, maxM))}" r="${inRange.length > 150 ? 2.5 : 3.5}" fill="${s.durMin > 45 ? 'var(--steady)' : 'var(--accent)'}" opacity="${s.durMin > 45 ? .95 : .7}"><title>${fmtShort(s.date)}: ${Math.round(s.durMin)} min · ${esc(s.name)}</title></circle>`);
+    if (timed.length > 4){ const pts = timed.map((s,i) => { const win = timed.slice(Math.max(0,i-7), i+1); return `${X(s.date)},${Y(mean(win.map(w => w.durMin)))}`; }).join(' '); svg += `<polyline fill="none" stroke="var(--ink)" stroke-width="1.75" opacity=".7" points="${pts}"/>`; }
+    $('#timeChart').innerHTML = svg + axisDates(start, t, W, L, Rr, H, X) + '</svg>';
+  }
+
+  // weekly volume
+  const vc = volumeCheck();
+  $('#volStats').innerHTML = vc ? `
+    <div><b>${fmtVol(vc.avg)}</b><span class="muted small">${u} per week, last 4 weeks</span></div>
+    <div><b>${vc.vs4 == null ? '—' : (vc.vs4 > 0 ? '+' : '') + vc.vs4 + '%'}</b><span class="muted small">vs. the 4 weeks before</span></div>
+    <div><b>${vc.vs12 == null ? '—' : (vc.vs12 > 0 ? '+' : '') + vc.vs12 + '%'}</b><span class="muted small">vs. the 12 weeks before</span></div>
+    ${vc.since ? `<div><b>${vc.since.pct > 0 ? '+' : ''}${vc.since.pct}%</b><span class="muted small">since you came back ${fmtShort(vc.since.from)}</span></div>` : ''}
+    <div><b>${vc.sessions4.toFixed(1)}</b><span class="muted small">sessions per week</span></div>` : '';
+  $('#volNote').textContent = volumeSentence(vc);
+  $('#volNote').className = `small voln ${vc ? 'v-' + vc.status : ''}`;
+  {
+    const wk = weeklyVolumes(), thisWeek = weekStart(t);
+    const wkeys = []; for (let w = weekStart(start); w <= thisWeek; w = addDays(w, 7)) wkeys.push(w);
+    const W = clamp($('#volChart').clientWidth || 900, 320, 900), H = 200, L = 46, Rr = 12, T = 12, B = 26;
+    const vals = wkeys.map(w => toUnit(wk[w] ? wk[w].vol : 0));
+    const maxV = niceMax(Math.max(...vals, 1));
+    const bw = (W-L-Rr)/wkeys.length;
+    const X = i => L + i*bw, Y = v => T + (1 - v/maxV)*(H-T-B);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly lifting volume with an 8-week average">` + gridY([0, maxV/2, maxV], L, W, Rr, Y, v => v >= 1000 ? `${Math.round(v/1000)}k` : Math.round(v));
+    wkeys.forEach((w,i) => { const v = vals[i]; if (!v) return; const cur = w === thisWeek;
+      svg += `<rect x="${X(i)+bw*0.12}" y="${Y(v)}" width="${Math.max(1, bw*0.76)}" height="${Y(0)-Y(v)}" rx="${Math.min(3, bw/4)}" fill="var(--muted)" opacity="${cur ? .2 : .45}"><title>Week of ${fmtShort(w)}: ${Math.round(v).toLocaleString()} ${u}${wk[w] ? ` · ${wk[w].n} ${wk[w].n === 1 ? 'session' : 'sessions'}` : ''}${cur ? ' (in progress)' : ''}</title></rect>`; });
+    // 8-week average over weeks you trained; breaks leave a gap instead of dragging the line to zero
+    const segs = []; let cur = [];
+    wkeys.forEach((w,i) => {
+      const win = vals.slice(Math.max(0,i-7), i+1).filter(v => v > 0);
+      if (w === thisWeek || !vals[i] || win.length < 2){ if (cur.length > 1) segs.push(cur); cur = []; return; }
+      cur.push(`${X(i)+bw/2},${Y(mean(win))}`);
+    });
+    if (cur.length > 1) segs.push(cur);
+    segs.forEach(sg => svg += `<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" points="${sg.join(' ')}"/>`);
+    const Xd = d => L + (diffDays(weekStart(start), d)/Math.max(1, diffDays(weekStart(start), addDays(thisWeek,7))))*(W-L-Rr);
+    $('#volChart').innerHTML = svg + axisDates(weekStart(start), thisWeek, W, L, Rr, H, Xd) + '</svg>';
+  }
+
+  // top weight per main lift
+  $('#liftGrid').innerHTML = LIFT_SLOTS.map(slot => {
+    const { name, cands } = slotExercise(slot);
+    if (!name) return `<div class="liftcell"><div class="lifthead"><b>${slot.label}</b></div><p class="muted small">No ${slot.label.toLowerCase()} sessions found.</p></div>`;
+    const pts = inRange.flatMap(s => s.ex.filter(e => e.n === name && e.topKg > 0).map(e => ({ d:s.date, kg:e.topKg, reps:e.topReps })));
+    const allPts = LIFT.sessions.flatMap(s => s.ex.filter(e => e.n === name && e.topKg > 0).map(e => ({ d:s.date, kg:e.topKg, reps:e.topReps })));
+    const lastP = allPts[allPts.length-1];
+    const best = pts.length ? pts.reduce((a,b) => b.kg > a.kg ? b : a) : null;
+    const sel = `<select data-slot="${slot.id}" aria-label="${slot.label} exercise">${cands.map(c => `<option ${c===name?'selected':''}>${esc(c)}</option>`).join('')}</select>`;
+    const stat = `<p class="small muted">Latest ${fmtW(lastP.kg)} ${u} × ${lastP.reps} (${fmtShort(lastP.d)}${parse(lastP.d).getFullYear() !== parse(t).getFullYear() ? ', ' + parse(lastP.d).getFullYear() : ''})${best ? ` · Best in range ${fmtW(best.kg)} ${u}` : ''}</p>`;
+    if (pts.length < 2) return `<div class="liftcell"><div class="lifthead"><b>${slot.label}</b>${sel}</div>${stat}<p class="muted small" style="margin-top:8px">Not done in this time range. Try a longer range or another variant.</p></div>`;
+    return `<div class="liftcell"><div class="lifthead"><b>${slot.label}</b>${sel}</div>${stat}<div class="chartwrap" data-chart="${slot.id}"></div></div>`;
+  }).join('');
+  LIFT_SLOTS.forEach(slot => {
+    const el = document.querySelector(`[data-chart="${slot.id}"]`); if (!el) return;
+    const { name } = slotExercise(slot);
+    const pts = inRange.flatMap(s => s.ex.filter(e => e.n === name && e.topKg > 0).map(e => ({ d:s.date, v:toUnit(e.topKg), kg:e.topKg, reps:e.topReps })));
+    const W = clamp(el.clientWidth || 420, 260, 600), H = 150, L = 38, Rr = 10, T = 10, B = 24;
+    const lo = Math.floor(Math.min(...pts.map(p => p.v))*0.9/5)*5, hi = Math.ceil(Math.max(...pts.map(p => p.v))*1.05/5)*5;
+    const X = d => L + (diffDays(start, d)/Math.max(1, diffDays(start, t)))*(W-L-Rr), Y = v => T + (1 - (v-lo)/((hi-lo)||1))*(H-T-B);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(name)} top weight per session">` + gridY([lo, Math.round((lo+hi)/2), hi], L, W, Rr, Y, v => Math.round(v));
+    svg += `<polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" points="${pts.map(p => `${X(p.d)},${Y(p.v)}`).join(' ')}"/>`;
+    pts.forEach(p => svg += `<circle cx="${X(p.d)}" cy="${Y(p.v)}" r="${pts.length > 80 ? 2 : 3}" fill="var(--accent)"><title>${fmtShort(p.d)}: ${fmtW(p.kg)} ${state.settings.unit} × ${p.reps}</title></circle>`);
+    const ticks = W < 400 ? 2 : 3; let ax = '';
+    for (let i=0;i<=ticks;i++){ const d = addDays(start, Math.round(diffDays(start,t)*i/ticks)); ax += `<text x="${X(d)}" y="${H-6}" text-anchor="${i===0?'start':i===ticks?'end':'middle'}" font-size="11" fill="var(--muted)">${diffDays(start,t) > 400 ? `${MONTHS[parse(d).getMonth()]} ’${String(parse(d).getFullYear()).slice(2)}` : fmtShort(d)}</text>`; }
+    el.innerHTML = svg + ax + '</svg>';
+  });
+}
+
 /* ---------- weight ---------- */
 function rollingAvg(d, pts){
   const win = pts.filter(p => p.d <= d && diffDays(p.d, d) < 7);
@@ -1137,6 +1564,7 @@ function rollingAvg(d, pts){
 function renderWeight(){
   const u = state.settings.unit;
   $$('.unitLabel').forEach(el => el.textContent = u);
+  $$('.distUnit').forEach(el => el.textContent = distUnit());
   const pts = Object.keys(DAY).sort().filter(d => isNum(DAY[d].weight)).map(d => ({ d, w: DAY[d].weight }));
   $('#weightEmpty').hidden = pts.length >= 2;
   $('#weightBody').hidden = pts.length < 2;
@@ -1179,7 +1607,7 @@ function renderWeight(){
 function renderTrends(){
   const model = currentModel();
   $('#trendEmpty').hidden = !!model;
-  renderChart(model); renderAccuracy(model); renderCycle(); renderWeight();
+  renderChart(model); renderAccuracy(model); renderCycle(); renderLifting(); renderWeight();
 }
 
 /* ---------- patterns ---------- */
@@ -1197,7 +1625,7 @@ function renderPatterns(){
     out.push([`${diff>0?'+':''}${diff}`, `Days after you hit your ${target} h sleep target score ${Math.abs(diff)} points ${diff>=0?'higher':'lower'} than days after short sleep (under ${target-1} h).`]);
   }
   const afterHard = [], afterEasy = [];
-  dates.forEach(d => { const prev = DAY[addDays(d,-1)]; if (!prev || !prev.training) return; (prev.training === 'lifting' ? afterHard : prev.training === 'rest' ? afterEasy : []).push(R(d)); });
+  dates.forEach(d => { const pt = trainingOn(addDays(d,-1)); if (!pt) return; (pt === 'lifting' ? afterHard : pt === 'rest' ? afterEasy : []).push(R(d)); });
   if (afterHard.length >= 3 && afterEasy.length >= 3){
     const diff = Math.round(mean(afterHard) - mean(afterEasy));
     out.push([`${diff>0?'+':''}${diff}`, `The day after a lifting day runs ${Math.abs(diff)} points ${diff>=0?'higher':'lower'} than the day after a rest day.`]);
@@ -1301,22 +1729,23 @@ function download(name, text, type){
   a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
-function parseCSVLine(line){
+function parseCSVLine(line, delim = ','){
   const out = []; let cur = '', q = false;
   for (let i=0; i<line.length; i++){
     const c = line[i];
     if (q){ if (c === '"' && line[i+1] === '"'){ cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
-    else if (c === '"') q = true; else if (c === ',') { out.push(cur); cur = ''; } else cur += c;
+    else if (c === '"') q = true; else if (c === delim) { out.push(cur); cur = ''; } else cur += c;
   }
   out.push(cur); return out.map(s => s.trim());
 }
-const logSig = l => JSON.stringify([l.date, l.time, l.sleepHours, l.weight, l.training, [...l.tags].sort(), l.note, ...RATINGS.map(k => l[k])]);
+const logSig = l => JSON.stringify([l.date, l.time, l.sleepHours, l.weight, l.training, [...l.tags].sort(), l.note, ...RATINGS.map(k => l[k]), l.actType, l.actMin, l.actDist, l.actHR]);
 function importCSV(text){
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   const head = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z]/g, ''));
   const find = (...names) => head.findIndex(h => names.includes(h));
   const ix = { date:find('date','day'), time:find('time'), sleepHours:find('sleephours','sleep','hoursslept','sleephrs'), sleepQuality:find('sleepquality'),
-    energy:find('energy'), mood:find('mood'), motivation:find('motivation'), stress:find('stress'), training:find('training','workout','load'), note:find('note','notes'), period:find('period','periodstart','periodstarted'), tags:find('tags','tag','symptoms','symptom'), weight:find('weight','weightlb','weightkg','bodyweight') };
+    energy:find('energy'), mood:find('mood'), motivation:find('motivation'), stress:find('stress'), training:find('training','workout','load'), note:find('note','notes'), period:find('period','periodstart','periodstarted'), tags:find('tags','tag','symptoms','symptom'), weight:find('weight','weightlb','weightkg','bodyweight'),
+    activity:find('activity'), actMin:find('activityminutes','activityduration','duration','minutes'), actDist:find('distance','distancemi','distancekm'), actHR:find('avgheartrate','averageheartrate','avghr','heartrate') };
   if (ix.date < 0) throw new Error('No date column found.');
   const have = new Set(state.logs.map(logSig));
   let added = 0, skipped = 0;
@@ -1328,7 +1757,10 @@ function importCSV(text){
     let tr = cell('training').toLowerCase();
     tr = !tr ? null : /lift|strength|weight|hard|3/.test(tr) ? 'lifting' : /cardio|cycl|bike|ride|run|spin|mod|light|2|1/.test(tr) ? 'cardio' : 'rest';
     const time = (m => m ? `${pad(+m[1])}:${m[2]}` : null)(cell('time').match(/^(\d{1,2}):(\d{2})/));
+    const act = cell('activity').toLowerCase();
     const raw = { date, time, sleepHours:cell('sleepHours'), weight:cell('weight'), training:tr, note:cell('note'),
+      actType: !act ? null : /cycl|bike|spin|ride/.test(act) ? 'cycling' : /walk/.test(act) ? 'walking' : /hik/.test(act) ? 'hiking' : 'other',
+      actMin: parseDuration(cell('actMin')), actDist: cell('actDist'), actDistUnit: distUnit(), actHR: cell('actHR'),
       tags: TAGS.filter(x => cell('tags').toLowerCase().includes(x.toLowerCase())) };
     RATINGS.forEach(k => raw[k] = cell(k));
     const l = cleanLog(raw);
@@ -1350,6 +1782,7 @@ function renderAll(){
   $('#s-unit').value = state.settings.unit || 'lb';
   const nDays = Object.keys(DAY).length;
   $('#dataCount').textContent = state.logs.length ? `${state.logs.length} ${state.logs.length === 1 ? 'entry' : 'entries'} across ${nDays} ${nDays === 1 ? 'day' : 'days'}${state.periods.length ? `, ${state.periods.length} period ${state.periods.length === 1 ? 'start' : 'starts'}` : ''}. Export regularly; this browser is the only copy.` : 'Nothing logged yet.';
+  if (state.workouts.length){ const ds = state.workouts.map(w => w.date).sort(); $('#dataCount').textContent += ` ${state.workouts.length} Strong workouts (${fmtShort(ds[0])}, ${parse(ds[0]).getFullYear()} – ${fmtShort(ds[ds.length-1])}, ${parse(ds[ds.length-1]).getFullYear()}).`; }
   $('#sampleBtn2').hidden = state.logs.length > 0 && !state.sample;   // never offer to overwrite real data
   renderForecast(); renderPatterns(); renderWord(); renderEntries();
   if (page === 'trends') renderTrends(); else renderWeight();
@@ -1424,6 +1857,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // lifting view controls (Trends)
+  $('#liftRange').addEventListener('click', e => { const b = e.target.closest('button[data-r]'); if (!b) return; state.settings.liftRange = b.dataset.r; save(); renderLifting(); });
+  $('#liftGrid').addEventListener('change', e => { const sel = e.target.closest('select[data-slot]'); if (!sel) return; state.settings.liftSlots[sel.dataset.slot] = sel.value; save(); renderLifting(); });
+
   // encouragement + data
   $('#anotherWord').addEventListener('click', () => { wordIdx++; renderWord(); });
   $('#loadSample').addEventListener('click', loadSample);
@@ -1454,12 +1891,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let added = 0, skipped = 0;
         incoming.logs.forEach(l => { const sig = logSig(l); if (have.has(sig)) skipped++; else { have.add(sig); state.logs.push({ ...l, id: newId() }); added++; } });
         state.periods = [...new Set([...state.periods, ...incoming.periods])].sort();
+        const wk = new Map(state.workouts.map(w => [w.key, w])); incoming.workouts.forEach(w => wk.set(w.key, w)); state.workouts = [...wk.values()];
         if (s.settings) state.settings = incoming.settings;
         alert(`Added ${added} ${added === 1 ? 'entry' : 'entries'}.${skipped ? ` Skipped ${skipped} you already had.` : ''}`);
       } else {
         if (state.sample){ state.logs = []; state.periods = []; state.plans = {}; state.sample = false; }
-        const r = importCSV(text);
-        alert(`Added ${r.added} entries from CSV.${r.skipped ? ` Skipped ${r.skipped} you already had.` : ''}`);
+        const first = text.split(/\r?\n/, 1)[0];
+        if (/Exercise Name/i.test(first) && /Set Order/i.test(first)){
+          const r = importStrong(text);
+          alert(`Strong import: ${r.added} new ${r.added === 1 ? 'workout' : 'workouts'}${r.updated ? `, ${r.updated} updated` : ''}. ${r.total} workouts in total.`);
+        } else {
+          const r = importCSV(text);
+          alert(`Added ${r.added} entries from CSV.${r.skipped ? ` Skipped ${r.skipped} you already had.` : ''}`);
+        }
       }
       save(); selected = null; resetForm(todayStr()); renderAll();
     } catch(err){ alert('Import failed: ' + err.message); }
